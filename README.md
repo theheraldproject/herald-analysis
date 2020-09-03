@@ -44,7 +44,9 @@ You only need run this script for a representative sample of phone pairs once to
 
 ## License & Copyright
 
-All files are distributed under the MIT License. Copyright VMware Inc. All rights reserved.
+Copyright 2020 VMware, Inc.
+
+All files are distributed under the MIT License. 
 
 ## Assistance
 

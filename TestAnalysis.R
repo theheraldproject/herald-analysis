@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+
 library(plyr)
 library(chron)
 library(ggplot2)
@@ -27,9 +29,34 @@ library(parsedate)
 library(scales)
 library(caTools)
 
-
+# 1. Set the folder that contains a sub folder per phone in the test
 basedir <- "../test-data/2020-08-31-home-office-rc-03"
+# 2. Set the app name and version (for the chart titles)
 appversion <- "rc-03"
+
+# 3. (Optional) Time shift - If your protocol saves time in different time zones between mobile OS'
+timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
+# Set this wide by +/ 1 day until you figure out the right timeshift value
+
+# 4. Set the test outer time to be a couple of minutes before you started setting up the first phone in the environment, until after the last phone was deactivated
+filtertimemin <- as.POSIXct(paste("2020-08-31", "12:50:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemin
+filtertimemax <- as.POSIXct(paste("2020-08-31", "21:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax
+
+# 5. For FORMAL statistical calculations, set the start time to be the time at which the LAST phone was introduced to the group (or removed from shielded sleeve)
+#    Set the end time to be the time at which the FIRST phone was moved/had the app or BLE deactivated after the test
+cestart <- as.POSIXct(paste("2020-08-31", "12:55:00"), format="%Y-%m-%d %H:%M:%S")
+ceend <-   as.POSIXct(paste("2020-08-31", "21:15:00"), format="%Y-%m-%d %H:%M:%S")
+
+# 6. Select all lines in this file, and click Run. After several minutes (for 8 hour tests) you will see charts and summary CSV appear in the above folder
+
+# DO NOT EDIT BELOW THIS LINE
+
+# time interval calcs
+ceinterval <- "30 seconds" # for POSIXct cut
+cetotal <- ceiling(as.numeric(difftime(ceend, cestart, units = "secs"), units="secs") / 30)
+cetotal
 
 ## New as of cx-47 - build phones.csv from folder contents (detection.csv contents)
 pcsv <- data.frame(matrix(ncol = 8, nrow=0))
@@ -60,19 +87,6 @@ pcsv
 dcsv
 linecsv
 
-## Time shift
-timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
-# Set this wide by +/ 1 day until you figure out the right timeshift value
-filtertimemin <- as.POSIXct(paste("2020-08-31", "12:50:00"), format="%Y-%m-%d %H:%M:%S")
-filtertimemin
-filtertimemax <- as.POSIXct(paste("2020-08-31", "21:30:00"), format="%Y-%m-%d %H:%M:%S")
-filtertimemax
-
-cestart <- as.POSIXct(paste("2020-08-31", "12:55:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2020-08-31", "21:15:00"), format="%Y-%m-%d %H:%M:%S")
-ceinterval <- "30 seconds" # for POSIXct cut
-cetotal <- ceiling(as.numeric(difftime(ceend, cestart, units = "secs"), units="secs") / 30)
-cetotal
 
 # Determine longevity window time filters
 hour <- 1 * 60 * 60 # seconds for an hour

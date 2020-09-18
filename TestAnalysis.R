@@ -30,7 +30,7 @@ library(scales)
 library(caTools)
 
 # 1. Set the folder that contains a sub folder per phone in the test
-basedir <- "../test-data/2020-08-31-home-office-rc-03"
+basedir <- "~/Documents/git/skunkworks/test-data/2020-08-31-home-office-rc-03-copy"
 # 2. Set the app name and version (for the chart titles)
 appversion <- "rc-03"
 
@@ -287,7 +287,13 @@ for (i in 1:phonescount ) {
   rssi <- dplyr::filter(rssi,t<=filtertimemax)
   # Create summary statistics from the PList file HERE and output somewhere
   head(rssi)
-  durations <- subset(rbind(rssi,written),select=c("t","shortname","initialBID"))
+  
+  predur <- rssi
+  if (dim(written)[1] > 0) {
+    print(" - binding written data")
+    predur <- rbind(rssi,written)
+  }
+  durations <- subset(predur,select=c("t","shortname","initialBID"))
   durations$observer <- thisshortname
   head(durations)
   
@@ -299,10 +305,14 @@ for (i in 1:phonescount ) {
   du
   du$observer <- thisshortname
   
-  allrawdurations <- rbind(alldurations,durations)
+  print(" - binding allrawdurations")
+  head(durations)
+  allrawdurations <- rbind(allrawdurations,durations)
+  print(" - binding alldurations")
   alldurations <- rbind(alldurations,du)
   head(alldurations)
   
+  print(" - processing RSSI")
   if (dim(rssi)[1] > 0) {
     rssi$finalname = paste(rssi$shortname, " - C1. RSSIs",sep="")
     rssi <- subset(rssi, select = c("t","finalname"))
@@ -310,6 +320,7 @@ for (i in 1:phonescount ) {
     head(rssi)
   }
   
+  print(" - processing written")
   if (dim(written)[1] > 0) {
     written$finalname = paste(written$shortname, " - C2. Write ID with RSSI",sep="")
     written <- subset(written, select = c("t","finalname"))

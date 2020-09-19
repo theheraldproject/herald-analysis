@@ -28,11 +28,17 @@ You will see an accuracy graph and a report graph generated for each phone.
 - Report graph - shows communication between that phone and all other phones. If all goes well you should see solid lines (as dots join each other)
 - Accuracy graph - shows the RSSI received for each phone during the test. Each phone is colour coded. Expect lots of spurious values, but each colour phone should mostly be the same RSSI value if kept at a constant distance during the test
 
+An example report is shown below:-
+
+![Report for one iPhone](./sample-output/2020-08-11-cx-47/workiPhone-report.png)
+
 You also get three summary statistics CSV files:-
 
 - summary-discovery-pairs.csv - Shows a true/false grid for each phone pairing for detection only
 - formal-summary.csv - Shows all detection, continuity, and longevity stats as per the Fair Efficacy Formula
 - formal-continuity.csv - Shows detection and continuity stats per phone pairing
+
+These too are in the sample-output folder.
 
 ## Accuracy testing
 
@@ -50,4 +56,4 @@ Copyright 2020 VMware, Inc.
 
 ## Assistance
 
-Please report issues here and email oss-coc@vmware.com with any code of conduct open source issues.
+Please report [issues here](https://github.com/vmware/squire-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.

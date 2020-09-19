@@ -46,7 +46,7 @@ You only need run this script for a representative sample of phone pairs once to
 
 Copyright 2020 VMware, Inc.
 
-All files are distributed under the MIT License. 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Assistance
 

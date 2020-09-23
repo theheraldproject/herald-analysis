@@ -56,4 +56,4 @@ Copyright 2020 VMware, Inc.
 
 ## Assistance
 
-Please report [issues here](https://github.com/vmware/squire-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.
+Please report [issues here](https://github.com/vmware/herald-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.

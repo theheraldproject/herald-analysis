@@ -54,6 +54,8 @@ Copyright 2020 VMware, Inc.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+See LICENSE.txt and NOTICE.txt for details.
+
 ## Assistance
 
 Please report [issues here](https://github.com/vmware/herald-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.

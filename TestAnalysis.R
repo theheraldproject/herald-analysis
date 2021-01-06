@@ -139,8 +139,8 @@ names(allbids) <- c("initialBID")
 alldurations <- data.frame(matrix(ncol = 9, nrow = 0))
 names(alldurations) <- c("shortname","rssis.total","observer")
 
-#allrawdurations <- data.frame(matrix(ncol = 5, nrow = 0))
-#names(allrawdurations) <- c("t","shortname","initialBID","observer","count")
+allrawdurations <- data.frame(matrix(ncol = 5, nrow = 0))
+names(allrawdurations) <- c("t","shortname","initialBID","observer","count")
 allintervals <- data.frame(matrix(ncol = 2, nrow = 0))
 names(allintervals) <- c("shortname","t")
 

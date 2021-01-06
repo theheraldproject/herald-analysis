@@ -1,8 +1,24 @@
-# Fair Efficacy Formula Analysis Scripts
+# Herald Analysis repository
+
+This repository contains data analysis and research from the Herald
+project. It currently consists of the following:-
+
+- Fair Efficacy Formula Analysis Scripts - To measure the efficacy of any Digital Contact Tracing application
+- RSSI readings at distance - aimed to aid research in to RSSI to distance conversion algorithms. Includes code for RSSI reading automation robots.
+
+## License & Copyright
+
+Copyright 2020 VMware, Inc.
+
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
+
+See LICENSE.txt and NOTICE.txt for details.
+
+## Fair Efficacy Formula Analysis Scripts
 
 R analysis scripts for the Fair Efficacy Formula for proximity detection protocols in contact tracing apps
 
-## How to use
+### How to use
 
 1. Download and install the protocol test application on two or more
 phones.
@@ -21,7 +37,7 @@ Now run the test run analysis script:-
 
 This script should be ran for every test
 
-## The output
+### The output
 
 You will see an accuracy graph and a report graph generated for each phone.
 
@@ -40,7 +56,7 @@ You also get three summary statistics CSV files:-
 
 These too are in the sample-output folder.
 
-## Accuracy testing
+### Accuracy testing
 
 Accuracy testing works differently. Use the Bluetooth Calibration app to generate data for each phone pairing of interest at all the indicated distances on that app. Then open the FormalAccuracy.R file, read the instructions, and run the script.
 
@@ -48,13 +64,10 @@ This will generate a formal accuracy analysis CSV file, whose data is also used 
 
 You only need run this script for a representative sample of phone pairs once to generate your accuracy data.
 
-## License & Copyright
+## RSSI readings at distance
 
-Copyright 2020 VMware, Inc.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-See LICENSE.txt and NOTICE.txt for details.
+Please see the [RSSI Reference Data README](reference-data/rssi.md)
+for details.
 
 ## Assistance
 

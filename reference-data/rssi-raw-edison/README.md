@@ -16,6 +16,10 @@ The test environment uses a cable cart and pulley system driven by an [Edison ro
 
 ## Reference data
 
+The following tests were conducted with both phones in a vertical position on its side, aligned to the cable axis, as shown in the images above. Future work will automate data capture and publish data for phones in different orientations.
+
+A zipped bundle of all available data can be downloaded [here](bundle.zip) (2021-01-01 to 2021-01-06).
+
 | Date       | Phone A                          | Phone B                          | Range (cm) | Resolution (cm) | Duration (minutes) | Download                                      |
 | ---------- | -------------------------------- | -------------------------------- | ---------- | --------------- | ------------------ | --------------------------------------------- |
 | 2020-01-01 | iPhone 6S<br />(iOS 12.1.4)      | Google Pixel 2<br />(Android 29) | 0 - 200    | 20              | 30                 | [B](20210101-1938-B.csv)                      |
@@ -23,7 +27,10 @@ The test environment uses a cable cart and pulley system driven by an [Edison ro
 | 2020-01-02 | iPhone 6S<br />(iOS 12.1.4)      | Google Pixel 2<br />(Android 29) | 0 - 200    | 20              | 30                 | [B](20210102-1800-B.csv)                      |
 | 2020-01-03 | Samsung J6<br />(Android 28)     | Samsung A20<br />(Android 29)    | 0 - 200    | 20              | 30                 | [A](20210103-1026-A) [B](20210103-1026-B.csv) |
 | 2020-01-04 | Google Pixel 2<br />(Android 29) | Samsung A20<br />(Android 29)    | 0 - 300    | 25              | 30                 | [A](20210104-1422-A) [B](20210104-1422-B.csv) |
-|            |                                  |                                  |            |                 |                    |                                               |
+| 2021-01-05 | Samsung A10<br />(Android 28)    | Samsung A20<br />(Android 29)    | 0 - 300    | 25              | 30                 | [A](20210105-1754-A) [B](20210105-1754-B.csv) |
+| 2021-01-06 | Samsung Note8<br />(Android 28)  | Google Pixel 2<br />(Android 29) | 0 - 300    | 25              | 30                 | [A](20210106-0815-A) [B](20210106-0815-B.csv) |
+| 2021-01-06 | Samsung Note8<br />(Android 28)  | Google Pixel 2<br />(Android 29) | 0 - 300    | 20              | 30                 | [A](20210106-1501-A) [B](20210106-1501-B.csv) |
+| 2021-01-06 | Samsung Note8<br />(Android 28)  | Google Pixel 2<br />(Android 29) | 0 - 300    | 20              | 30                 | [A](20210106-2251-A) [B](20210106-2251-B.csv) |
 
 
 

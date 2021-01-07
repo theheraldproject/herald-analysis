@@ -102,7 +102,8 @@ public class MovementAnalysis extends CalibrationLogConsumer {
 		final Sample distribution = new Sample();
 		movements.forEach(movement -> distribution.add(movement.inertia));
 		// Remove values below mean to discard noise data
-		final double threshold = distribution.mean();
+		final double threshold = distribution.mean() - distribution.standardDeviation();
+		logger.info("Discarding noise below " + threshold);
 		return movements.parallelStream().filter(movement -> movement.inertia >= threshold)
 				.collect(Collectors.toList());
 	}
@@ -115,7 +116,7 @@ public class MovementAnalysis extends CalibrationLogConsumer {
 		candidates.sort((a, b) -> Double.compare(b.inertia, a.inertia));
 		// Discard candidates that are too close to existing peaks
 		final List<Movement> peaks = new ArrayList<>();
-		final long windowMillis = sampleDurationMillis / 4 * 3;
+		final long windowMillis = Math.round(0.9 * sampleDurationMillis);
 		for (final Movement candidate : candidates) {
 			boolean isLocalMaxima = true;
 			for (final Movement peak : peaks) {

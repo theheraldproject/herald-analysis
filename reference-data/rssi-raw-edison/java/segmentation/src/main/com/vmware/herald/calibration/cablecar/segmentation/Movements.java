@@ -10,6 +10,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+import com.vmware.herald.calibration.cablecar.util.Sample;
+
 /// Movements along cable axis over time quantised to unit time (e.g. 1 second)
 public class Movements {
 	private final long resolutionMillis;

@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-package com.vmware.herald.calibration.cablecar.segmentation;
+package com.vmware.herald.calibration.cablecar.util;
 
 public class Sample {
 	protected long n = 0;
@@ -122,6 +122,28 @@ public class Sample {
 		}
 	}
 
+	public Double skewness() {
+		if (n == 0) {
+			return null;
+		}
+		final double divisor = StrictMath.pow(m2, 1.5);
+		if (divisor == 0d) {
+			return null;
+		}
+		return StrictMath.sqrt(n) * m3 / divisor;
+	}
+
+	public Double kurtosis() {
+		if (n == 0) {
+			return null;
+		}
+		final double divisor = m2 * m2;
+		if (divisor == 0d) {
+			return null;
+		}
+		return n * m4 / divisor - 3.0;
+	}
+
 	public Double min() {
 		if (n > 0) {
 			return min;
@@ -179,6 +201,6 @@ public class Sample {
 	@Override
 	public String toString() {
 		return "[count=" + count() + ",mean=" + mean() + ",sd=" + standardDeviation() + ",min=" + min() + ",max="
-				+ max() + "]";
+				+ max() + ",skewness=" + skewness() + ",kurtosis=" + kurtosis() + "]";
 	}
 }

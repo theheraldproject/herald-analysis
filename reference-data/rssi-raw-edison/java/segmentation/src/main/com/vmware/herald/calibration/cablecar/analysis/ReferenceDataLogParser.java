@@ -52,7 +52,7 @@ public class ReferenceDataLogParser {
 					logger.log(Level.WARNING, "Invalid line " + lineNumber + ", unknown type : " + line);
 				}
 			} catch (Throwable e) {
-				logger.log(Level.WARNING, "Invalid line " + lineNumber + ", parse error : " + line, e);
+				logger.log(Level.WARNING, "Invalid line " + lineNumber + ", processing error : " + line, e);
 			}
 		}
 		consumer.close();

@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import com.vmware.herald.calibration.cablecar.analysis.CorrelationAnalysis;
 import com.vmware.herald.calibration.cablecar.analysis.ReferenceDataLogParser;
 import com.vmware.herald.calibration.cablecar.analysis.StatisticalAnalysis;
+import com.vmware.herald.calibration.cablecar.analysis.weka.ConvertCSVToARFF;
 import com.vmware.herald.calibration.cablecar.segmentation.Annotation;
 import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogConsumer;
 import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogParser;
@@ -68,6 +69,12 @@ public class CalibrationLogSegmentation {
 				Rotation.ROTATION_0);
 		final MovementAnalysis phoneBMovementAnalysis = new MovementAnalysis(deviceOrientation);
 		CalibrationLogParser.apply(phoneBLogFile, phoneBMovementAnalysis);
+		final TextFile phoneBMovementLogFile = new TextFile(logFolder, "movement.csv");
+		phoneBMovementLogFile.write("time,inertia");
+		MovementAnalysis.normalise(phoneBMovementAnalysis.movements.data, 5 * 60)
+				.forEach(m -> phoneBMovementLogFile.write(m.toString()));
+		phoneBMovementLogFile.close();
+
 		final List<Movement> phoneBMovements = phoneBMovementAnalysis.movedAt(sampleDurationMinutes * 60 * 1000);
 		if (sampleSteps > phoneBMovements.size()) {
 			logger.log(Level.SEVERE, "Number of movements < samples steps (" + sampleSteps + ") : " + phoneBMovements);
@@ -102,6 +109,12 @@ public class CalibrationLogSegmentation {
 		correlationFile.write("A," + phoneAPearson);
 		correlationFile.write("B," + phoneBPearson);
 		correlationFile.close();
+
+		// Generate ARFF files for use with WEKA
+		ReferenceDataLogParser.apply(phoneAReferenceDataFile,
+				new ConvertCSVToARFF(10, 50, new TextFile(logFolder, "A.arff")));
+		ReferenceDataLogParser.apply(phoneBReferenceDataFile,
+				new ConvertCSVToARFF(10, 50, new TextFile(logFolder, "B.arff")));
 	}
 
 	protected final static double statisticalAnalysis(final File logFile, final TextFile outputFile) throws Exception {
@@ -139,10 +152,10 @@ public class CalibrationLogSegmentation {
 			lastAnnotation.endTime = new Date(lastAnnotation.startTime.getTime() + sampleDurationMinutes * 60000);
 		}
 		// Adjust all annotation start and end times to discard data during movement
-		// (+/- 15 seconds)
+		// (+/- 60 seconds)
 		for (final Annotation annotation : annotations) {
-			annotation.startTime = new Date(annotation.startTime.getTime() + 15000);
-			annotation.endTime = new Date(annotation.endTime.getTime() - 15000);
+			annotation.startTime = new Date(annotation.startTime.getTime() + 60000);
+			annotation.endTime = new Date(annotation.endTime.getTime() - 60000);
 		}
 		return annotations;
 	}

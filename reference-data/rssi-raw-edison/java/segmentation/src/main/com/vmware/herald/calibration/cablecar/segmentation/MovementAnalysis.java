@@ -98,6 +98,33 @@ public class MovementAnalysis extends CalibrationLogConsumer {
 		movements.close();
 	}
 
+	/// Normalise movements based on local context because the phone is not
+	/// perfectly horizontal as it travels along the cable, thus gravity
+	/// has a systemic impact on measurements.
+	public final static List<Movement> normalise(final List<Movement> movements, final long windowSeconds) {
+		final List<Movement> normalised = new ArrayList<>(movements.size());
+		final Sample context = new Sample();
+		for (int i = 0; i < movements.size(); i++) {
+			context.clear();
+			// Look backward
+			for (int j = i - 1, s = 0; j > 0 && s < windowSeconds; j--, s++) {
+				context.add(movements.get(j).inertia);
+			}
+			// Look forward
+			for (int j = i + 1, s = 0; j < movements.size() && s < windowSeconds; j++, s++) {
+				context.add(movements.get(j).inertia);
+			}
+			// Movement
+			final Movement movement = movements.get(i);
+			if (context.count() == 0) {
+				normalised.add(movement);
+			} else {
+				normalised.add(new Movement(movement.time, movement.inertia / context.mean()));
+			}
+		}
+		return normalised;
+	}
+
 	/// Find time when cable car was moved by searching for peaks separated by at
 	/// least 1/2 sample duration
 	protected final static List<Movement> peaks(final List<Movement> movements, final long sampleDurationMillis) {
@@ -110,8 +137,8 @@ public class MovementAnalysis extends CalibrationLogConsumer {
 		candidates.sort((a, b) -> Double.compare(b.inertia, a.inertia));
 		// Discard candidates that are too close to existing peaks
 		final List<Movement> peaks = new ArrayList<>();
-		final long windowMillis = Math.round(0.99 * sampleDurationMillis);
-		for (final Movement candidate : movements) {
+		final long windowMillis = Math.round(0.8 * sampleDurationMillis);
+		for (final Movement candidate : candidates) {
 			boolean isLocalMaxima = true;
 			for (final Movement peak : peaks) {
 				// Discard entries close to existing maxima
@@ -129,6 +156,6 @@ public class MovementAnalysis extends CalibrationLogConsumer {
 	}
 
 	public List<Movement> movedAt(final long sampleDurationMillis) {
-		return peaks(movements.data, sampleDurationMillis);
+		return peaks(normalise(movements.data, sampleDurationMillis / 2000), sampleDurationMillis);
 	}
 }

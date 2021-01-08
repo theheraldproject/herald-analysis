@@ -57,7 +57,7 @@ public class TextFile implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		if (fileOutputStream == null) {
 			return;
 		}

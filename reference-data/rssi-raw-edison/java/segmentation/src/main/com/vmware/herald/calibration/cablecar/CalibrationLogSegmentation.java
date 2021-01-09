@@ -112,9 +112,9 @@ public class CalibrationLogSegmentation {
 
 		// Generate ARFF files for use with WEKA
 		ReferenceDataLogParser.apply(phoneAReferenceDataFile,
-				new ConvertCSVToARFF(10, 50, new TextFile(logFolder, "A.arff")));
+				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "A.arff")));
 		ReferenceDataLogParser.apply(phoneBReferenceDataFile,
-				new ConvertCSVToARFF(10, 50, new TextFile(logFolder, "B.arff")));
+				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "B.arff")));
 	}
 
 	protected final static double statisticalAnalysis(final File logFile, final TextFile outputFile) throws Exception {

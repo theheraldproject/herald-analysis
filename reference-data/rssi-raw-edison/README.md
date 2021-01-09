@@ -84,6 +84,7 @@ A zipped bundle of all available data can be downloaded [here](bundle.zip).
 | 20210106 | N8      | P2      | 0 - 300    | 20        | 30              | [A](20210106-2251-A.csv) [B](20210106-2251-B.csv)     |
 | 20210107 | A10     | A20     | 0 - 300    | 10        | 20              | [A](20210107-1123-A.csv) [B](20210107-1123-B.csv) |
 | 20210107 | Denmark     | P2     | 0 - 300    | 10        | 20              | [A](20210107-2245-A.csv) [B](20210107-2245-B.csv) |
+| 20210108 | Denmark | Germany | 0 - 300 | 10 | 20 | [A](20210108-1423-A.csv) [B](20210108-1423-B.csv) |
 
 
 ## References

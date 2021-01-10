@@ -21,9 +21,9 @@ Ed.Tempo = Ed.TEMPO_MEDIUM
 # Cart 25cm = 25 x 1.5625 = Edison 39cm
 
 # Define sampling schedule
-sampleDuration = 1800   # Sample duration in seconds (30 minutes = 30 x 60 = 1800 seconds)
-sampleDistanceStep = 39 # Sample resolution in Edison drive distance (Cart 25cm = Edison 39cm)
-sampleSteps = 12        # Number of sample periods (Cart 25cm x 12 steps = 300cm total range)
+sampleDuration = 1200   # Sample duration in seconds (20 minutes = 20 x 60 = 1200 seconds)
+sampleDistanceStep = 16 # Sample resolution in Edison drive distance (Cart 10cm = Edison 16cm)
+sampleSteps = 30        # Number of sample periods (Cart 10cm x 30 steps = 300cm total range)
 
 # Sample duration is split into shorter wait time periods
 # because Edison will power off automatically if Ed.TimeWait()
@@ -53,6 +53,7 @@ Ed.PlayBeep()
 Ed.TimeWait(10, Ed.TIME_SECONDS)
 Ed.PlayTone(Ed.NOTE_A_7, Ed.NOTE_HALF)
 Ed.TimeWait(10, Ed.TIME_SECONDS)
+Ed.LeftLed(Ed.ON)
 
 # Run sampling schedule according to parameters
 for i in range(sampleSteps):
@@ -114,3 +115,49 @@ Ed.PlayTone(Ed.NOTE_D_7, Ed.NOTE_HALF)
 Ed.DriveLeftMotor(Ed.FORWARD, Ed.SPEED_5, sampleSteps * sampleDistanceStep)
 Ed.PlayTone(Ed.NOTE_E_7, Ed.NOTE_HALF)
 
+# Wait for sampling at 0cm
+# 0
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+# 5
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+# 10
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+# 15
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+Ed.PlayBeep()
+Ed.TimeWait(waitTime, Ed.TIME_SECONDS)
+# LED off to indicate completion of 0cm sampling
+Ed.LeftLed(Ed.OFF)

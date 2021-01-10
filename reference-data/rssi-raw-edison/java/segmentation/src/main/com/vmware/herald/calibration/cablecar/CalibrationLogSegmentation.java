@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-package com.vmware.herald.calibration.cablecar.segmentation;
+package com.vmware.herald.calibration.cablecar;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,15 +17,26 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.vmware.herald.calibration.cablecar.analysis.CorrelationAnalysis;
+import com.vmware.herald.calibration.cablecar.analysis.ReferenceDataLogParser;
+import com.vmware.herald.calibration.cablecar.analysis.StatisticalAnalysis;
+import com.vmware.herald.calibration.cablecar.analysis.weka.ConvertCSVToARFF;
+import com.vmware.herald.calibration.cablecar.segmentation.Annotation;
+import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogConsumer;
+import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogParser;
+import com.vmware.herald.calibration.cablecar.segmentation.DeviceOrientation;
 import com.vmware.herald.calibration.cablecar.segmentation.DeviceOrientation.Orientation;
 import com.vmware.herald.calibration.cablecar.segmentation.DeviceOrientation.Rotation;
+import com.vmware.herald.calibration.cablecar.segmentation.Movement;
+import com.vmware.herald.calibration.cablecar.segmentation.MovementAnalysis;
+import com.vmware.herald.calibration.cablecar.util.TextFile;
 
 /// Automated process for extracting reference data from calibration log
 /// 1. Create log folder for a test run (e.g. 20210102-0000)
 /// 2. Copy raw phone logs into sub-folders with prefix "A" and "B" for phone A and B (e.g. 20210102-0000/A-Pixel2, 20210102-0000/B-J6)
 /// 3. Run this tool to generate reference data
-public class CalibrationLogAnalysis {
-	private final static Logger logger = Logger.getLogger(CalibrationLogAnalysis.class.getName());
+public class CalibrationLogSegmentation {
+	private final static Logger logger = Logger.getLogger(CalibrationLogSegmentation.class.getName());
 	private final static SimpleDateFormat fileNameDateFormatter = new SimpleDateFormat("yyyyMMdd-HHmm");
 	private final static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -35,6 +46,7 @@ public class CalibrationLogAnalysis {
 	/// distance - Distance moved per step in centimetres (e.g. 20)
 	/// steps - Number of steps performed in test (e.g. 10)
 	public static void main(String[] args) throws Exception {
+		// Get parameters
 		final File logFolder = new File(args[0]);
 		final int sampleDurationMinutes = Integer.parseInt(args[1]);
 		final int sampleDistanceCentimetres = Integer.parseInt(args[2]);
@@ -57,6 +69,12 @@ public class CalibrationLogAnalysis {
 				Rotation.ROTATION_0);
 		final MovementAnalysis phoneBMovementAnalysis = new MovementAnalysis(deviceOrientation);
 		CalibrationLogParser.apply(phoneBLogFile, phoneBMovementAnalysis);
+		final TextFile phoneBMovementLogFile = new TextFile(logFolder, "movement.csv");
+		phoneBMovementLogFile.write("time,inertia");
+		MovementAnalysis.normalise(phoneBMovementAnalysis.movements.data, 5 * 60)
+				.forEach(m -> phoneBMovementLogFile.write(m.toString()));
+		phoneBMovementLogFile.close();
+
 		final List<Movement> phoneBMovements = phoneBMovementAnalysis.movedAt(sampleDurationMinutes * 60 * 1000);
 		if (sampleSteps > phoneBMovements.size()) {
 			logger.log(Level.SEVERE, "Number of movements < samples steps (" + sampleSteps + ") : " + phoneBMovements);
@@ -66,20 +84,56 @@ public class CalibrationLogAnalysis {
 		// Show phone B movements for visual check
 		final List<Annotation> annotations = annotations(phoneBMovements, sampleDurationMinutes,
 				sampleDistanceCentimetres, sampleSteps);
-		System.out.println("startTime,endTime,duration,distance,minutesSinceLastMovement");
-		annotations.forEach(annotation -> System.out.println(annotation.toString()));
+		final TextFile segmentationFile = new TextFile(logFolder, "segmentation.csv", System.out);
+		segmentationFile.write("startTime,endTime,duration,distance,inertia");
+		annotations.forEach(annotation -> segmentationFile.write(annotation.toString()));
+		segmentationFile.close();
 
 		// Apply annotations to phone A and B logs
-		final File outputFileA = apply(annotations, phoneALogFile, logFolder, "-A.csv");
-		logger.log(Level.INFO, "Wrote segmented file for phone A : " + outputFileA);
-		final File outputFileB = apply(annotations, phoneBLogFile, logFolder, "-B.csv");
-		logger.log(Level.INFO, "Wrote segmented file for phone B : " + outputFileB);
+		final File phoneAReferenceDataFile = annotate(annotations, phoneALogFile, logFolder, "-A.csv");
+		logger.log(Level.INFO, "Wrote segmented file for phone A : " + phoneAReferenceDataFile);
+		final File phoneBReferenceDataFile = annotate(annotations, phoneBLogFile, logFolder, "-B.csv");
+		logger.log(Level.INFO, "Wrote segmented file for phone B : " + phoneBReferenceDataFile);
+
+		// Apply statistical analysis to phone A and B reference data
+		logger.log(Level.INFO, "Statistical analysis of phone A data");
+		final double phoneAPearson = statisticalAnalysis(phoneAReferenceDataFile,
+				new TextFile(logFolder, "statisticsA.csv", System.out));
+		logger.log(Level.INFO, "Statistical analysis of phone B data");
+		final double phoneBPearson = statisticalAnalysis(phoneBReferenceDataFile,
+				new TextFile(logFolder, "statisticsB.csv", System.out));
+		logger.log(Level.INFO,
+				"Pearson correlation coefficient (phoneA=" + phoneAPearson + ",phoneB=" + phoneBPearson + ")");
+		final TextFile correlationFile = new TextFile(logFolder, "correlation.csv", System.out);
+		correlationFile.write("phone,pearson");
+		correlationFile.write("A," + phoneAPearson);
+		correlationFile.write("B," + phoneBPearson);
+		correlationFile.close();
+
+		// Generate ARFF files for use with WEKA
+		ReferenceDataLogParser.apply(phoneAReferenceDataFile,
+				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "A.arff")));
+		ReferenceDataLogParser.apply(phoneBReferenceDataFile,
+				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "B.arff")));
+	}
+
+	protected final static double statisticalAnalysis(final File logFile, final TextFile outputFile) throws Exception {
+		// Statistical analysis to obtain summary statistics
+		final StatisticalAnalysis statisticalAnalysis = new StatisticalAnalysis();
+		ReferenceDataLogParser.apply(logFile, statisticalAnalysis);
+		outputFile.write("distance,count,mean,standardDeviation,min,max,skewness,kurtosis");
+		statisticalAnalysis.distributions().forEach(d -> outputFile.write(d.toString()));
+		outputFile.close();
+		// Pearson correlation analysis
+		final CorrelationAnalysis correlationAnalysis = new CorrelationAnalysis(statisticalAnalysis.distributions());
+		ReferenceDataLogParser.apply(logFile, correlationAnalysis);
+		return correlationAnalysis.pearsonCorrelationCoefficient();
 	}
 
 	protected final static List<Annotation> annotations(final List<Movement> movements, final int sampleDurationMinutes,
 			final int sampleDistanceCentimetres, final int sampleSteps) {
 		final List<Annotation> annotations = new ArrayList<>(movements.size() - 1);
-		for (int i = 0; i < movements.size() - 1; i++) {
+		for (int i = 0; i < movements.size() - 1 && i < sampleSteps + 1; i++) {
 			final Movement movement = movements.get(i);
 			final Movement nextMovement = movements.get(i + 1);
 			final int distance = ((i + 1) % (sampleSteps + 1)) * sampleDistanceCentimetres;
@@ -98,10 +152,10 @@ public class CalibrationLogAnalysis {
 			lastAnnotation.endTime = new Date(lastAnnotation.startTime.getTime() + sampleDurationMinutes * 60000);
 		}
 		// Adjust all annotation start and end times to discard data during movement
-		// (+/- 15 seconds)
+		// (+/- 60 seconds)
 		for (final Annotation annotation : annotations) {
-			annotation.startTime = new Date(annotation.startTime.getTime() + 15000);
-			annotation.endTime = new Date(annotation.endTime.getTime() - 15000);
+			annotation.startTime = new Date(annotation.startTime.getTime() + 60000);
+			annotation.endTime = new Date(annotation.endTime.getTime() - 60000);
 		}
 		return annotations;
 	}
@@ -118,8 +172,8 @@ public class CalibrationLogAnalysis {
 		return null;
 	}
 
-	protected final static File apply(final List<Annotation> annotations, final File logFile, final File outputFolder,
-			final String suffix) throws Exception {
+	protected final static File annotate(final List<Annotation> annotations, final File logFile,
+			final File outputFolder, final String suffix) throws Exception {
 		final File outputFile = new File(outputFolder,
 				fileNameDateFormatter.format(annotations.get(0).startTime) + suffix);
 		final PrintWriter printWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));

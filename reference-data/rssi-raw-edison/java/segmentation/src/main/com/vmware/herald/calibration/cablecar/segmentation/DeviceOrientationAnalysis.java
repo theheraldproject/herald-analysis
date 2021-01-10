@@ -10,6 +10,7 @@ import java.util.Date;
 
 import com.vmware.herald.calibration.cablecar.segmentation.DeviceOrientation.Orientation;
 import com.vmware.herald.calibration.cablecar.segmentation.DeviceOrientation.Rotation;
+import com.vmware.herald.calibration.cablecar.util.Sample;
 
 /// Determine device orientation from distribution of x, y, z values.
 /// Assumes device is aligned to one of the axis. Heuristics assumes

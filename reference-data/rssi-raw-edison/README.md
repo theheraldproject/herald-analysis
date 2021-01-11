@@ -4,7 +4,7 @@ Bluetooth low energy (BLE) received signal strength indicator (RSSI) offer an es
 
 Reference data for RSSI values taken at different physical distances using different devices is fundamental for research. The manual production of this data is prohibitively time consuming and labour intensive. The aim of this work is to automate the process to make this data freely available to support research, using simple and widely available components to facilitate community participation and replication.
 
-Download all available reference data [here](Archive.zip) (1.3 million measurements).
+Download all available reference data [here](Archive.zip) (1.4 million measurements).
 
 ## Method
 
@@ -54,7 +54,7 @@ The phones used for data capture are as follows. Location permission was granted
 | ----------- | ------------------- | ---------- | --------------------------------------------- |
 | 4S          | Apple iPhone 4S     | iOS 9.3.5  | Battery drains unusually fast due to age      |
 | Germany     | Apple iPhone 5S     | iOS 12.3   | Battery drains unusually fast due to age      |
-| Denmark     | Apple iPhone 6S     | iOS 12.1.4 |                                               |
+| Denmark     | Apple iPhone 6S     | iOS 12.1.4 | Battery drains unusually fast due to age      |
 | Netherlands | Apple iPhone 6 Plus | iOS 12.4.9 |                                               |
 | X           | Apple iPhone X      | iOS 14.2   |                                               |
 | P2          | Google Pixel 2      | Android 29 | Battery drains unusually fast due to age      |
@@ -86,6 +86,7 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210107 | Denmark     | P2     | 0 - 300    | 10        | 20              | [A](20210107-2245-A.csv) [B](20210107-2245-B.csv) |
 | 20210108 | Denmark | Germany | 0 - 300 | 10 | 20 | [A](20210108-1423-A.csv) [B](20210108-1423-B.csv) |
 | 20210109 | Denmark | Germany | 0 - 300 | 10 | 20 | [A](20210109-2342-A.csv) [B](20210109-2342-B.csv) |
+| 20210110 | A20 | P2 | 0 - 300 | 10 | 20 | [A](20210110-2247-A.csv) [B](20210110-2247-B.csv) |
 
 Release notes:
 

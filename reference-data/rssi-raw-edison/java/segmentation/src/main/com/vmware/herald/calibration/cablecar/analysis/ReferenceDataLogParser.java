@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 public class ReferenceDataLogParser {
 	private final static Logger logger = Logger.getLogger(ReferenceDataLogParser.class.getName());
-	private final static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public final static void apply(final File logFile, final ReferenceDataLogConsumer consumer) throws Exception {
 		final FileReader fileReader = new FileReader(logFile);
@@ -27,6 +26,7 @@ public class ReferenceDataLogParser {
 
 	public final static void apply(final BufferedReader bufferedReader, final ReferenceDataLogConsumer consumer)
 			throws IOException {
+		final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String line;
 		long lineNumber = 0;
 		boolean keepWorking = true;
@@ -53,6 +53,7 @@ public class ReferenceDataLogParser {
 				}
 			} catch (Throwable e) {
 				logger.log(Level.WARNING, "Invalid line " + lineNumber + ", processing error : " + line, e);
+				e.printStackTrace();
 			}
 		}
 		consumer.close();

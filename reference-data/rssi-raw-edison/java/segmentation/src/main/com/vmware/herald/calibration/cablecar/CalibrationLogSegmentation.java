@@ -18,9 +18,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.vmware.herald.calibration.cablecar.analysis.CorrelationAnalysis;
+import com.vmware.herald.calibration.cablecar.analysis.DetectionLogData;
 import com.vmware.herald.calibration.cablecar.analysis.ReferenceDataLogParser;
 import com.vmware.herald.calibration.cablecar.analysis.StatisticalAnalysis;
-import com.vmware.herald.calibration.cablecar.analysis.weka.ConvertCSVToARFF;
 import com.vmware.herald.calibration.cablecar.segmentation.Annotation;
 import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogConsumer;
 import com.vmware.herald.calibration.cablecar.segmentation.CalibrationLogParser;
@@ -64,6 +64,27 @@ public class CalibrationLogSegmentation {
 			return;
 		}
 
+		// Get phone data files
+		final DetectionLogData phoneADetectionLog = DetectionLogData
+				.parse(new File(phoneALogFile.getParentFile(), "detection.csv"));
+		final DetectionLogData phoneBDetectionLog = DetectionLogData
+				.parse(new File(phoneBLogFile.getParentFile(), "detection.csv"));
+		if (phoneADetectionLog == null) {
+			logger.log(Level.SEVERE, "Missing detection.csv file for phone A");
+			return;
+		}
+		if (phoneBDetectionLog == null) {
+			logger.log(Level.SEVERE, "Missing detection.csv file for phone B");
+			return;
+		}
+		final TextFile phoneMetadataFile = new TextFile(logFolder, "phones.csv");
+		phoneMetadataFile.write("phone,name,os,version,payload");
+		phoneMetadataFile.write("A," + phoneADetectionLog.deviceName + "," + phoneADetectionLog.operatingSystem + ","
+				+ phoneADetectionLog.operatingSystemVersion + "," + phoneADetectionLog.payloadShortName);
+		phoneMetadataFile.write("B," + phoneBDetectionLog.deviceName + "," + phoneBDetectionLog.operatingSystem + ","
+				+ phoneBDetectionLog.operatingSystemVersion + "," + phoneBDetectionLog.payloadShortName);
+		phoneMetadataFile.close();
+
 		// Analysis of phone B movements
 		final DeviceOrientation deviceOrientation = new DeviceOrientation(Orientation.VERTICAL_RIGHT_EDGE,
 				Rotation.ROTATION_0);
@@ -74,7 +95,6 @@ public class CalibrationLogSegmentation {
 		MovementAnalysis.normalise(phoneBMovementAnalysis.movements.data, 5 * 60)
 				.forEach(m -> phoneBMovementLogFile.write(m.toString()));
 		phoneBMovementLogFile.close();
-
 		final List<Movement> phoneBMovements = phoneBMovementAnalysis.movedAt(sampleDurationMinutes * 60 * 1000);
 		if (sampleSteps > phoneBMovements.size()) {
 			logger.log(Level.SEVERE, "Number of movements < samples steps (" + sampleSteps + ") : " + phoneBMovements);
@@ -90,9 +110,11 @@ public class CalibrationLogSegmentation {
 		segmentationFile.close();
 
 		// Apply annotations to phone A and B logs
-		final File phoneAReferenceDataFile = annotate(annotations, phoneALogFile, logFolder, "-A.csv");
+		final File phoneAReferenceDataFile = annotate(annotations, phoneBDetectionLog.payloadShortName, phoneALogFile,
+				logFolder, "-A.csv");
 		logger.log(Level.INFO, "Wrote segmented file for phone A : " + phoneAReferenceDataFile);
-		final File phoneBReferenceDataFile = annotate(annotations, phoneBLogFile, logFolder, "-B.csv");
+		final File phoneBReferenceDataFile = annotate(annotations, phoneADetectionLog.payloadShortName, phoneBLogFile,
+				logFolder, "-B.csv");
 		logger.log(Level.INFO, "Wrote segmented file for phone B : " + phoneBReferenceDataFile);
 
 		// Apply statistical analysis to phone A and B reference data
@@ -109,12 +131,6 @@ public class CalibrationLogSegmentation {
 		correlationFile.write("A," + phoneAPearson);
 		correlationFile.write("B," + phoneBPearson);
 		correlationFile.close();
-
-		// Generate ARFF files for use with WEKA
-		ReferenceDataLogParser.apply(phoneAReferenceDataFile,
-				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "A.arff")));
-		ReferenceDataLogParser.apply(phoneBReferenceDataFile,
-				new ConvertCSVToARFF(20, 10, new TextFile(logFolder, "B.arff")));
 	}
 
 	protected final static double statisticalAnalysis(final File logFile, final TextFile outputFile) throws Exception {
@@ -172,8 +188,8 @@ public class CalibrationLogSegmentation {
 		return null;
 	}
 
-	protected final static File annotate(final List<Annotation> annotations, final File logFile,
-			final File outputFolder, final String suffix) throws Exception {
+	protected final static File annotate(final List<Annotation> annotations, final String targetPayload,
+			final File logFile, final File outputFolder, final String suffix) throws Exception {
 		final File outputFile = new File(outputFolder,
 				fileNameDateFormatter.format(annotations.get(0).startTime) + suffix);
 		final PrintWriter printWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
@@ -191,6 +207,10 @@ public class CalibrationLogSegmentation {
 				// No more work to do
 				if (annotation == null) {
 					return false;
+				}
+				// Only output data associated with specific target
+				if (!target.equals(targetPayload)) {
+					return true;
 				}
 				// Write annotated data
 				if (time.getTime() >= annotation.startTime.getTime()

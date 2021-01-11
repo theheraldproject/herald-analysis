@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 public class CalibrationLogParser {
 	private final static Logger logger = Logger.getLogger(CalibrationLogParser.class.getName());
-	private final static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public final static void apply(final File logFile, final CalibrationLogConsumer consumer) throws Exception {
 		final FileReader fileReader = new FileReader(logFile);
@@ -27,6 +26,7 @@ public class CalibrationLogParser {
 
 	public final static void apply(final BufferedReader bufferedReader, final CalibrationLogConsumer consumer)
 			throws IOException {
+		final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String line;
 		long lineNumber = 0;
 		boolean keepWorking = true;

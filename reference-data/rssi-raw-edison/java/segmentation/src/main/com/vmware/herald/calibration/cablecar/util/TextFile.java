@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class TextFile implements AutoCloseable {
 	private final static Logger logger = Logger.getLogger(TextFile.class.getName());
-	private final File file;
+	public final File file;
 	private final OutputStream echoStream;
 	private FileOutputStream fileOutputStream = null;
 

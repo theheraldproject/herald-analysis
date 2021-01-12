@@ -4,7 +4,7 @@ Bluetooth low energy (BLE) received signal strength indicator (RSSI) offer an es
 
 Reference data for RSSI values taken at different physical distances using different devices is fundamental for research. The manual production of this data is prohibitively time consuming and labour intensive. The aim of this work is to automate the process to make this data freely available to support research, using simple and widely available components to facilitate community participation and replication.
 
-Download all available reference data [here](Archive.zip) (1.4 million measurements).
+Download all available reference data [here](Archive.zip) (1.5 million measurements).
 
 ## Method
 
@@ -87,10 +87,14 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210108 | Denmark | Germany | 0 - 300 | 10 | 20 | [A](20210108-1423-A.csv) [B](20210108-1423-B.csv) |
 | 20210109 | Denmark | Germany | 0 - 300 | 10 | 20 | [A](20210109-2342-A.csv) [B](20210109-2342-B.csv) |
 | 20210110 | A20 | P2 | 0 - 300 | 10 | 20 | [A](20210110-2247-A.csv) [B](20210110-2247-B.csv) |
+| 20210111 | Netherlands | Germany | 0 - 300 | 10 | 20 | [A](20210111-1015-A.csv) [B](20210111-1015-B.csv) |
+| 20210111 | A10 | A20 | 0 - 300 | 10 | 20 | [A](20210111-2252-A.csv) [B](20210111-2252-B.csv) |
 
 Release notes:
 
-**20210109** - Test environment updated to raise altitude of cable car, and increase maximum range supported by the environment. Test was conducted in noisy environment with three other HERALD instances running at the same time (five in total) and at least five other Bluetooth devices active. 
+**20210109** - Test environment updated to raise altitude of cable car, and increase maximum range supported by the environment. This test was conducted in a noisy environment with three other HERALD instances running at the same time (five in total) and at least five other Bluetooth devices active.
+
+**20210110** - All tests from 20210109 shall use the new test environment, and running just the two HERALD instances for data capture.
 
 ## References
 

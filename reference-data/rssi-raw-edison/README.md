@@ -4,7 +4,7 @@ Bluetooth low energy (BLE) received signal strength indicator (RSSI) offer an es
 
 Reference data for RSSI values taken at different physical distances using different devices is fundamental for research. The manual production of this data is prohibitively time consuming and labour intensive. The aim of this work is to automate the process to make this data freely available to support research, using simple and widely available components to facilitate community participation and replication.
 
-Download all available reference data [here](Archive.zip) (1.5 million measurements).
+Download all available reference data [here](Archive.zip) (1.6 million measurements).
 
 ## Method
 
@@ -89,6 +89,8 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210110 | A20 | P2 | 0 - 300 | 10 | 20 | [A](20210110-2247-A.csv) [B](20210110-2247-B.csv) |
 | 20210111 | Netherlands | Germany | 0 - 300 | 10 | 20 | [A](20210111-1015-A.csv) [B](20210111-1015-B.csv) |
 | 20210111 | A10 | A20 | 0 - 300 | 10 | 20 | [A](20210111-2252-A.csv) [B](20210111-2252-B.csv) |
+| 20210112 | P2 | A10 | 0 - 300 | 10 | 20 | [A](20210112-2303-A.csv) [B](20210112-2303-B.csv) |
+| 20210113 | Netherlands | Denmark | 0 - 300 | 10 | 20 | [A](20210113-2034-A.csv) [B](20210113-2034-B.csv) |
 
 Release notes:
 

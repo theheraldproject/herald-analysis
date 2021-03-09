@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +52,7 @@ public class CalibrationLogSegmentation {
 		final int sampleDurationMinutes = Integer.parseInt(args[1]);
 		final int sampleDistanceCentimetres = Integer.parseInt(args[2]);
 		final int sampleSteps = Integer.parseInt(args[3]);
+		final int startAtCentimetres = Integer.parseInt(args[4]);
 
 		// Get calibration log files
 		final File phoneALogFile = getCalibrationLogInSubFolder(logFolder, "A-");
@@ -103,18 +105,23 @@ public class CalibrationLogSegmentation {
 
 		// Show phone B movements for visual check
 		final List<Annotation> annotations = annotations(phoneBMovements, sampleDurationMinutes,
-				sampleDistanceCentimetres, sampleSteps);
+				sampleDistanceCentimetres, sampleSteps, 30, startAtCentimetres);
 		final TextFile segmentationFile = new TextFile(logFolder, "segmentation.csv", System.out);
 		segmentationFile.write("startTime,endTime,duration,distance,inertia");
 		annotations.forEach(annotation -> segmentationFile.write(annotation.toString()));
 		segmentationFile.close();
 
+		// Synchronise phone A and B time based on first detection time
+		final long deltaTime = deltaTime(phoneALogFile, phoneBLogFile, phoneADetectionLog.payloadShortName,
+				phoneBDetectionLog.payloadShortName);
+		logger.log(Level.INFO, "Time delta (tB-tA) : " + deltaTime + "ms");
+
 		// Apply annotations to phone A and B logs
-		final File phoneAReferenceDataFile = annotate(annotations, phoneBDetectionLog.payloadShortName, phoneALogFile,
-				logFolder, "-A.csv");
+		final File phoneAReferenceDataFile = annotate(annotations, deltaTime, phoneBDetectionLog.payloadShortName,
+				phoneALogFile, logFolder, "-A.csv");
 		logger.log(Level.INFO, "Wrote segmented file for phone A : " + phoneAReferenceDataFile);
-		final File phoneBReferenceDataFile = annotate(annotations, phoneADetectionLog.payloadShortName, phoneBLogFile,
-				logFolder, "-B.csv");
+		final File phoneBReferenceDataFile = annotate(annotations, 0, phoneADetectionLog.payloadShortName,
+				phoneBLogFile, logFolder, "-B.csv");
 		logger.log(Level.INFO, "Wrote segmented file for phone B : " + phoneBReferenceDataFile);
 
 		// Apply statistical analysis to phone A and B reference data
@@ -133,6 +140,29 @@ public class CalibrationLogSegmentation {
 		correlationFile.close();
 	}
 
+	protected final static Date firstDetectionTimestamp(final File logFile, final String targetPayloadShortName)
+			throws Exception {
+		final AtomicReference<Date> timestamp = new AtomicReference<>();
+		CalibrationLogParser.apply(logFile, new CalibrationLogConsumer() {
+			@Override
+			public boolean rssi(Date time, String target, double rssi) {
+				if (target.equals(targetPayloadShortName) && time != null) {
+					timestamp.set(time);
+					return false;
+				}
+				return true;
+			}
+		});
+		return timestamp.get();
+	}
+
+	protected final static long deltaTime(final File phoneALogFile, final File phoneBLogFile,
+			final String phoneAPayloadShortName, final String phoneBPayloadShortName) throws Exception {
+		final Date phoneAFirstDetection = firstDetectionTimestamp(phoneALogFile, phoneBPayloadShortName);
+		final Date phoneBFirstDetection = firstDetectionTimestamp(phoneBLogFile, phoneAPayloadShortName);
+		return phoneBFirstDetection.getTime() - phoneAFirstDetection.getTime();
+	}
+
 	protected final static double statisticalAnalysis(final File logFile, final TextFile outputFile) throws Exception {
 		// Statistical analysis to obtain summary statistics
 		final StatisticalAnalysis statisticalAnalysis = new StatisticalAnalysis();
@@ -147,12 +177,13 @@ public class CalibrationLogSegmentation {
 	}
 
 	protected final static List<Annotation> annotations(final List<Movement> movements, final int sampleDurationMinutes,
-			final int sampleDistanceCentimetres, final int sampleSteps) {
+			final int sampleDistanceCentimetres, final int sampleSteps, final int discardDataSeconds,
+			final int startAtCentimetres) {
 		final List<Annotation> annotations = new ArrayList<>(movements.size() - 1);
 		for (int i = 0; i < movements.size() - 1 && i < sampleSteps + 1; i++) {
 			final Movement movement = movements.get(i);
 			final Movement nextMovement = movements.get(i + 1);
-			final int distance = ((i + 1) % (sampleSteps + 1)) * sampleDistanceCentimetres;
+			final int distance = ((i + 1) % (sampleSteps + 1)) * sampleDistanceCentimetres + startAtCentimetres;
 			final Annotation annotation = new Annotation(new Date(movement.time), new Date(nextMovement.time), distance,
 					movement.inertia);
 			annotations.add(annotation);
@@ -170,8 +201,8 @@ public class CalibrationLogSegmentation {
 		// Adjust all annotation start and end times to discard data during movement
 		// (+/- 60 seconds)
 		for (final Annotation annotation : annotations) {
-			annotation.startTime = new Date(annotation.startTime.getTime() + 60000);
-			annotation.endTime = new Date(annotation.endTime.getTime() - 60000);
+			annotation.startTime = new Date(annotation.startTime.getTime() + (discardDataSeconds * 1000));
+			annotation.endTime = new Date(annotation.endTime.getTime() - (discardDataSeconds * 1000));
 		}
 		return annotations;
 	}
@@ -188,8 +219,9 @@ public class CalibrationLogSegmentation {
 		return null;
 	}
 
-	protected final static File annotate(final List<Annotation> annotations, final String targetPayload,
-			final File logFile, final File outputFolder, final String suffix) throws Exception {
+	protected final static File annotate(final List<Annotation> annotations, final long deltaTime,
+			final String targetPayload, final File logFile, final File outputFolder, final String suffix)
+			throws Exception {
 		final File outputFile = new File(outputFolder,
 				fileNameDateFormatter.format(annotations.get(0).startTime) + suffix);
 		final PrintWriter printWriter = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
@@ -200,8 +232,9 @@ public class CalibrationLogSegmentation {
 
 			@Override
 			public boolean rssi(Date time, String target, double rssi) {
+				final long adjustedTime = time.getTime() + deltaTime;
 				// Move to next annotation
-				while (annotation != null && time.getTime() >= annotation.endTime.getTime()) {
+				while (annotation != null && adjustedTime >= annotation.endTime.getTime()) {
 					annotation = queue.poll();
 				}
 				// No more work to do
@@ -213,9 +246,9 @@ public class CalibrationLogSegmentation {
 					return true;
 				}
 				// Write annotated data
-				if (time.getTime() >= annotation.startTime.getTime()
-						&& time.getTime() <= annotation.endTime.getTime()) {
-					printWriter.println(dateFormatter.format(time) + "," + rssi + "," + annotation.distance);
+				if (adjustedTime >= annotation.startTime.getTime() && adjustedTime <= annotation.endTime.getTime()) {
+					printWriter.println(
+							dateFormatter.format(new Date(adjustedTime)) + "," + rssi + "," + annotation.distance);
 				}
 				return true;
 			}

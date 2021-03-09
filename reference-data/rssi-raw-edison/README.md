@@ -1,4 +1,4 @@
-# Calibration data : RSSI to distance 
+# Calibration data : RSSI to distance
 
 Bluetooth low energy (BLE) received signal strength indicator (RSSI) offer an estimator of physical proximity, where RSSI values decrease with increasing physical distance. The accurate conversion from RSSI to distance is an active area of research, as the process requires data modelling and calibration (Lovett et al., 2020), and radio signal is subject to interference (Leith and Farrell, 2020).
 
@@ -91,12 +91,17 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210111 | A10 | A20 | 0 - 300 | 10 | 20 | [A](20210111-2252-A.csv) [B](20210111-2252-B.csv) |
 | 20210112 | P2 | A10 | 0 - 300 | 10 | 20 | [A](20210112-2303-A.csv) [B](20210112-2303-B.csv) |
 | 20210113 | Netherlands | Denmark | 0 - 300 | 10 | 20 | [A](20210113-2034-A.csv) [B](20210113-2034-B.csv) |
+| 20210305 | Netherlands | Denmark | 0 - 150 | 1 | 10 | [A](20210305-0958-A.csv) [B](20210305-0958-B.csv) |
+| 20210306 | Netherlands | Denmark | 100 - 250 | 1 | 10 | [A](20210306-1803-A.csv) [B](20210306-1803-B.csv) |
+| 20210308 | Netherlands | Denmark | 200 - 350 | 1 | 10 | [A](20210308-0922-A.csv) [B](20210308-0922-B.csv) |
 
 Release notes:
 
 **20210109** - Test environment updated to raise altitude of cable car, and increase maximum range supported by the environment. This test was conducted in a noisy environment with three other HERALD instances running at the same time (five in total) and at least five other Bluetooth devices active.
 
 **20210110** - All tests from 20210109 shall use the new test environment, and running just the two HERALD instances for data capture.
+
+**20210305** - All tests from 20210305 shall use an enhanced segmentation algorithm that synchronises time across two devices based on initial detection timestamps. Improving timing accuracy means only +/- 30 seconds of data around segmentation boundary is discarded (instead of +/- 60 seconds) to avoid inclusion of data during movement.  
 
 ## References
 

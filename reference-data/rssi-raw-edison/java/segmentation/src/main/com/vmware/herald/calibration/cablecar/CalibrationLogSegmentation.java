@@ -99,7 +99,8 @@ public class CalibrationLogSegmentation {
 		phoneBMovementLogFile.close();
 		final List<Movement> phoneBMovements = phoneBMovementAnalysis.movedAt(sampleDurationMinutes * 60 * 1000);
 		if (sampleSteps > phoneBMovements.size()) {
-			logger.log(Level.SEVERE, "Number of movements < samples steps (" + sampleSteps + ") : " + phoneBMovements);
+			logger.log(Level.SEVERE, "Number of movements (" + phoneBMovements.size() + ") < samples steps ("
+					+ sampleSteps + ") : " + phoneBMovements);
 			return;
 		}
 

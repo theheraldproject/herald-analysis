@@ -58,6 +58,7 @@ The phones used for data capture are as follows. Location permission was granted
 | Netherlands | Apple iPhone 6 Plus | iOS 12.4.9 |                                               |
 | X           | Apple iPhone X      | iOS 14.2   |                                               |
 | P2          | Google Pixel 2      | Android 29 | Battery drains unusually fast due to age      |
+| P3          | Google Pixel 3      | Android 30 | Operating System is Android 12 Developer Preview |
 | J6          | Samsung J6          | Android 28 | BLE advertising and accelerometer unsupported |
 | A10         | Samsung A10         | Android 28 | BLE address rotates every few seconds         |
 | A20         | Samsung A20         | Android 29 | BLE address rotates every few seconds         |
@@ -94,6 +95,9 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210305 | Netherlands | Denmark | 0 - 150 | 1 | 10 | [A](20210305-0958-A.csv) [B](20210305-0958-B.csv) |
 | 20210306 | Netherlands | Denmark | 100 - 250 | 1 | 10 | [A](20210306-1803-A.csv) [B](20210306-1803-B.csv) |
 | 20210308 | Netherlands | Denmark | 200 - 350 | 1 | 10 | [A](20210308-0922-A.csv) [B](20210308-0922-B.csv) |
+| 20210309 | Netherlands | Denmark | 0 - 320 | 1 | 5 | [A](20210309-1437-A.csv) [B](20210309-1437-B.csv) |
+| 20210311 | P2 | A20 | 0 - 340 | 1 | 4 | [A](20210311-0901-A.csv) [B](20210311-0901-B.csv) |
+| 20210312 | P2 | P3 | 0 - 340 | 1 | 4 | [A](20210312-1049-A.csv) [B](20210312-1049-B.csv) |
 
 Release notes:
 

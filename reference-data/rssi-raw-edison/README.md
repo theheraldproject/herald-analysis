@@ -56,6 +56,8 @@ The phones used for data capture are as follows. Location permission was granted
 | Germany     | Apple iPhone 5S     | iOS 12.3   | Battery drains unusually fast due to age      |
 | Denmark     | Apple iPhone 6S     | iOS 12.1.4 | Battery drains unusually fast due to age      |
 | Netherlands | Apple iPhone 6 Plus | iOS 12.4.9 |                                               |
+| 6S+         | Apple iPhone 6S Plus | iOS 13.6  |                                               |
+| 8+          | Apple iPhone 8 Plus | iOS 13.6   |                                               |
 | X           | Apple iPhone X      | iOS 14.2   |                                               |
 | P2          | Google Pixel 2      | Android 29 | Battery drains unusually fast due to age      |
 | P3          | Google Pixel 3      | Android 30 | Operating System is Android 12 Developer Preview |
@@ -98,6 +100,8 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210309 | Netherlands | Denmark | 0 - 320 | 1 | 5 | [A](20210309-1437-A.csv) [B](20210309-1437-B.csv) |
 | 20210311 | P2 | A20 | 0 - 340 | 1 | 4 | [A](20210311-0901-A.csv) [B](20210311-0901-B.csv) |
 | 20210312 | P2 | P3 | 0 - 340 | 1 | 4 | [A](20210312-1049-A.csv) [B](20210312-1049-B.csv) |
+| 20210313 | 6S+ | 8+ | 0 - 340 | 1 | 4 | [A](20210313-1005-A.csv) [B](20210313-1005-B.csv) |
+| 20210314 | Netherlands | P3 | 0 - 340 | 1 | 4 | [A](20210314-1021-A.csv) [B](20210314-1021-B.csv) |
 
 Release notes:
 

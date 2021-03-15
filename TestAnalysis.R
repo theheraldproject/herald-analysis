@@ -1,24 +1,6 @@
-# MIT License
+# Apache 2.0 licensed
 # 
-# Copyright (c) 2020 VMware Inc.
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#   
-#   The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Copyright (c) 2020-2021 Herald Project Contributors
 
 # Author Adam Fowler adamf@vmware.com adam@adamfowler.org
 
@@ -30,7 +12,7 @@ library(scales)
 library(caTools)
 
 # 1. Set the folder that contains a sub folder per phone in the test
-basedir <- "~/Documents/test-data/20210101-Test"
+basedir <- "/Volumes/TB3-1/git/skunkworks/test-data/2021-02-21-herald"
 # 2. Set the app name and version (for the chart titles)
 appversion <- "herald"
 
@@ -39,15 +21,15 @@ timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to lo
 # Set this wide by +/ 1 day until you figure out the right timeshift value
 
 # 4. Set the test outer time to be a couple of minutes before you started setting up the first phone in the environment, until after the last phone was deactivated
-filtertimemin <- as.POSIXct(paste("2021-01-01", "12:00:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemin <- as.POSIXct(paste("2021-02-20", "23:20:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemin
-filtertimemax <- as.POSIXct(paste("2021-01-01", "14:00:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2021-02-21", "15:20:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemax
 
 # 5. For FORMAL statistical calculations, set the start time to be the time at which the LAST phone was introduced to the group (or removed from shielded sleeve)
 #    Set the end time to be the time at which the FIRST phone was moved/had the app or BLE deactivated after the test
-cestart <- as.POSIXct(paste("2021-01-01", "12:10:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2021-01-01", "13:50:00"), format="%Y-%m-%d %H:%M:%S")
+cestart <- as.POSIXct(paste("2021-02-20", "23:55:00"), format="%Y-%m-%d %H:%M:%S")
+ceend <-   as.POSIXct(paste("2021-02-21", "14:55:00"), format="%Y-%m-%d %H:%M:%S")
 
 # 6. Select all lines in this file, and click Run. After several minutes (for 8 hour tests) you will see charts and summary CSV appear in the above folder
 

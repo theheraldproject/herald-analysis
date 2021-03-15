@@ -45,3 +45,5 @@ reference-data/rssi-raw-edison/java/segmentation/bin
 
 # Signed-off by template
 git-template
+
+**/output/**

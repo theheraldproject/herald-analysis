@@ -4,27 +4,94 @@
 # 
 
 # Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+# File originally in the herald-calibration project but copied here to be used for reference data analysis
 
+library(plyr)
 library(dplyr)
 library(readr)
 library(ggplot2)
 library(ggpubr)
-origwd=getwd()
+library(chron)
+library(parsedate)
+library(scales)
+library(caTools)
+#origwd=getwd()
 
 # 1. Set the folder within which you have a set of CSVs, one recorded for each distance. This should be for one phone of the pair only, not both
-setwd("~/Documents/YOURFOLDERHERE/from-phoneA-to-phoneB/") 
+#setwd("/Volumes/TB3-1/git/skunkworks/herald-analysis/reference-data/rssi-raw-edison/")
+basedir <- "/Volumes/TB3-1/git/skunkworks/herald-analysis/reference-data/rssi-raw-edison"
 
-# 2. Do 'select all' and click 'run' in R studio. Download any extensions, if prompted.
+# 2. Set the ID number (as a STRING) of the test you wish to generate charts for (It'll generate charts for both devices under test)
+ourtestid <- "18"
 
-# 3. After a few seconds you'll see output charts generated in the above folder
+# 3. Do 'select all' and click 'run' in R studio. Download any extensions, if prompted.
+# 4. After a few seconds you'll see output charts generated in the above folder
 
-basedata <- data.frame(matrix(ncol = 11, nrow=0))
-names(basedata) <- c("distance","rssi","model","osname","osver","txpower","rxpower","yourtxpower","recmodel","recosname","recosver")
-list_file <- list.files(pattern="*.csv")
-for (i in 1:length(list_file) ) {
-  filerows <- read.table(paste(list_file[i] ,sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
-  basedata <- rbind(basedata,filerows)
-}
+# DO NOT EDIT BELOW THIS LINE
+outputdir <- paste(basedir , "/output",sep="")
+
+# Load tests metadata file metadata.csv
+metadata <- read.table(paste(basedir , "/metadata.csv",sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
+# Retrieve our test's data
+testmeta <- dplyr::filter(metadata,testid==ourtestid)
+# Run script for phone b in that test
+#fields <- subset(testmeta, select = c("testid","date","phonebname","distfrom","distto","diststep","durationmins","filenamephoneb"))
+# Receiver (rec) is phone B for now
+#names(fields) <- c("testid","date","name","distfrom","distto","diststep","durationmins","filename")
+
+# mix in phoneb's metadata from phones.csv
+phones <- read.table(paste(basedir , "/phones.csv",sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
+names(phones) <- c("phonebname","model","os","osversion","notes")
+enriched <- join(testmeta,phones,by="phonebname")
+# we now have fields: testid,date,phoneaname,phonebname,distfrom,distto,diststep,durationmins,filenamephonea,filenamephoneb AND model,os,osversion,notes
+names(enriched) <- c("testid","date","phoneaname","recname","distfrom","distto","diststep","durationmins","filenamephonea","filenamephoneb","recmodel","recosname","recosver","recnotes")
+
+# now mix in phone A's metadata
+phones <- read.table(paste(basedir , "/phones.csv",sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
+names(phones) <- c("phoneaname","model","os","osversion","notes")
+enriched <- join(enriched,phones,by="phoneaname")
+names(enriched) <- c("testid","date","name","recname","distfrom","distto","diststep","durationmins","filename","recfilename",
+                     "recmodel","recosname","recosver","recnotes",
+                     "model","osname","osver","notes")
+
+# Now we can finally load the data from the test
+rundata <- read.table(paste(basedir , "/", enriched$recfilename,sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
+head(rundata)
+# time (YYYY-MM-DD HH:mm:ss), rssi, distance (cm)
+# And mix in the metadata
+basedata <- rundata
+basedata$model <- enriched$model
+basedata$osname <- enriched$osname
+basedata$osver <- enriched$osver
+basedata$recmodel <- enriched$recmodel
+basedata$recosname <- enriched$recosname
+basedata$recosver <- enriched$recosver
+
+# Convert from cm to metres!
+basedata$distance <- 0.01 * basedata$distance
+
+# Push distance of 0 to slightly higher due to log math
+#basedata[basedata$distance == "0", "distance"] <- "0.00001"
+
+# filter distance = 0 instead
+basedata <- filter(basedata, distance!="0")
+
+# hardcoded unknown values
+basedata$txpower <- 1
+basedata$rxpower <- 1
+basedata$yourtxpower <- 1
+
+
+
+# now we have the same data as the previous script's format - so just run it
+
+#basedata <- data.frame(matrix(ncol = 11, nrow=0))
+#names(basedata) <- c("distance","rssi","model","osname","osver","txpower","rxpower","yourtxpower","recmodel","recosname","recosver")
+#list_file <- list.files(pattern="*.csv")
+#for (i in 1:length(list_file) ) {
+#  filerows <- read.table(paste(list_file[i] ,sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
+#  basedata <- rbind(basedata,filerows)
+#}
 head(basedata)
 tail(basedata)
 
@@ -93,7 +160,7 @@ p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance
        title="RSSI population distribution by distance",
        subtitle="No outliers have been removed. Orange line is the mean value.") 
 p
-ggsave("distance-raw.png", width = 600, height = 1000, units = "mm")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-raw.png", sep=""), width = 600, height = 1000, units = "mm")
 
 
 
@@ -108,7 +175,7 @@ desd <- ggplot(mu, aes(x=distnumeric, y=sqrt(grp.var), color=3)) +
        subtitle="Meters and RSSI") + 
   theme(legend.position = "none")
 desd
-ggsave("distance-effects-sd.png")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-sd.png", sep=""))
 
 # Plot Mean RSSI by distance
 demean <- ggplot(mu, aes(x=distnumeric, y=grp.mean, color=4)) +
@@ -123,7 +190,7 @@ demean <- ggplot(mu, aes(x=distnumeric, y=grp.mean, color=4)) +
        subtitle="Errors bars show +/- 1 standard deviation from mean") + 
   theme(legend.position = "none")
 demean
-ggsave("distance-effects-mean-sd.png")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-mean-sd.png", sep=""))
 
 # Plot mean by distance squared
 desquare <- ggplot(mu, aes(x=distsq, y=grp.mean, color=4)) +
@@ -137,7 +204,7 @@ desquare <- ggplot(mu, aes(x=distsq, y=grp.mean, color=4)) +
        title="Regression for Mean RSSI to distance squared(m)") + 
   theme(legend.position = "none")
 desquare
-ggsave("distance-effects-squared.png")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-squared.png", sep=""))
 
 
 
@@ -154,17 +221,19 @@ mu
 # filter each data set by std dev
 for (d in mu$distance) {
   idx = which(mu$distance == d)
-  write(d,stdout())
-  write(idx,stdout())
-  write(length(basedata$rssi),stdout())
+  #write(d,stdout())
+  #write(idx,stdout())
+  #write(length(basedata$rssi),stdout())
   minRssi = mu$grp.median[idx] - 3*sqrt(mu$grp.var[idx])
   maxRssi = mu$grp.median[idx] + 3*sqrt(mu$grp.var[idx])
-  write(minRssi,stdout())
-  write(maxRssi,stdout())
+  #write(minRssi,stdout())
+  #write(maxRssi,stdout())
   basedata = subset(basedata, !distance %in% d | (rssi >= minRssi & rssi <= maxRssi))
-  write(length(basedata$rssi),stdout())
-  write("----",stdout())
+  #write(length(basedata$rssi),stdout())
+  #write("----",stdout())
 }
+
+# determine the ideal chart size
 
 # Creates multiple plots by distance
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
@@ -179,13 +248,13 @@ p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance
   geom_vline(data=mu, aes(xintercept=mu$grp.mode - 2*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mode + 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mode - 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-  facet_wrap(~distance, ncol=2, nrow=13, scales="free") +
+  facet_wrap(~distance, ncol=2, nrow=34, scales="free") +
   labs(x="RSSI values within 3 std devs of original data",
        y="Relative density of population",
        title="RSSI population distribution by distance",
        subtitle="Outliers beyond 3 standard deviations have been removed") 
 p
-ggsave("distribution.png", width = 600, height = 1000, units = "mm")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distribution.png", sep=""), width = 600, height = 1000, units = "mm")
 
 # Now figure out the regression line - RSSI drops off logarithmically with distance
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
@@ -204,11 +273,12 @@ rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
        subtitle="Errors bars show 1 standard deviation from mode") + 
   theme(legend.position = "none")
 rplot
-ggsave("regression.png")
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-regression.png", sep=""))
 
 # R number almost -1 because we're using mode and not mean
 #  - See http://www.fairlynerdy.com/what-is-r-squared/
 # Very low p number means a good fit
 #  - See Anderson, Faye. (2016). Re: What is the relationship between R-squared and p-value in a regression?. Retrieved from: https://www.researchgate.net/post/What_is_the_relationship_between_R-squared_and_p-value_in_a_regression/57612faddc332d362552c5f1/citation/download. 
 
-setwd(origwd)
+#setwd(origwd)
+write("done",stdout())

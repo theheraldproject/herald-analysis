@@ -65,6 +65,7 @@ The phones used for data capture are as follows. Location permission was granted
 | A10         | Samsung A10         | Android 28 | BLE address rotates every few seconds         |
 | A20         | Samsung A20         | Android 29 | BLE address rotates every few seconds         |
 | N8          | Samsung Note 8      | Android 28 | BLE address rotates every few seconds         |
+| S9+         | Samsung S9+         | Android 29 | BLE address rotates every few seconds         |
 
 ## Reference data
 
@@ -102,6 +103,7 @@ A zipped bundle of all available data can be downloaded [here](Archive.zip).
 | 20210312 | P2 | P3 | 0 - 340 | 1 | 4 | [A](20210312-1049-A.csv) [B](20210312-1049-B.csv) |
 | 20210313 | 6S+ | 8+ | 0 - 340 | 1 | 4 | [A](20210313-1005-A.csv) [B](20210313-1005-B.csv) |
 | 20210314 | Netherlands | P3 | 0 - 340 | 1 | 4 | [A](20210314-1021-A.csv) [B](20210314-1021-B.csv) |
+| 20210315 | S9+ | P2 | 0 - 340 | 1 | 4 | [A](20210315-1040-A.csv) [B](20210315-1040-B.csv) |
 
 Release notes:
 

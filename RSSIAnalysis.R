@@ -15,14 +15,12 @@ library(chron)
 library(parsedate)
 library(scales)
 library(caTools)
-#origwd=getwd()
 
 # 1. Set the folder within which you have a set of CSVs, one recorded for each distance. This should be for one phone of the pair only, not both
-#setwd("/Volumes/TB3-1/git/skunkworks/herald-analysis/reference-data/rssi-raw-edison/")
 basedir <- "/Volumes/TB3-1/git/skunkworks/herald-analysis/reference-data/rssi-raw-edison"
 
 # 2. Set the ID number (as a STRING) of the test you wish to generate charts for (It'll generate charts for both devices under test)
-ourtestid <- "18"
+ourtestid <- "26"
 
 # 3. Do 'select all' and click 'run' in R studio. Download any extensions, if prompted.
 # 4. After a few seconds you'll see output charts generated in the above folder
@@ -92,10 +90,10 @@ basedata$yourtxpower <- 1
 #  filerows <- read.table(paste(list_file[i] ,sep=""),sep=",",header=TRUE, stringsAsFactors=FALSE)
 #  basedata <- rbind(basedata,filerows)
 #}
-head(basedata)
-tail(basedata)
+#head(basedata)
+#tail(basedata)
 
-summary(basedata)
+#summary(basedata)
 
 # EXAMPLE: Filter out of band rssi - FIX not doing this now. Doesn't appear in calibration results.
 #filter<-c(-90:100)
@@ -122,15 +120,16 @@ getmode <- function(v) {
 # PRE PROCESSING OF DATA - RAW VALUE PRINT OUTS
 
 # Plot reading number (sequence number) by RSSI
-deseq <- ggplot(basedata, aes(x=seq, y=rssi, color=distance)) +
-  geom_point() +
-  labs(x="Sequence Number", y="RSSI", 
-       title="RSSI over time at each distance") + 
-  theme(legend.position = "bottom")
-deseq
-ggsave("rssi-sequence.png")
+#deseq <- ggplot(basedata, aes(x=seq, y=rssi, color=distance)) +
+#  geom_point() +
+#  labs(x="Sequence Number", y="RSSI", 
+#       title="RSSI over time at each distance") + 
+#  theme(legend.position = "bottom")
+##deseq
+#ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-rssi-sequence.png", sep=""))
 
 # Raw data per distance bound - RSSI frequencies
+
 
 # now need to recalculate summary stats for plots to be drawn correctly
 mu <- ddply(basedata, "distance", summarise, grp.var=var(rssi), 
@@ -138,9 +137,49 @@ mu <- ddply(basedata, "distance", summarise, grp.var=var(rssi),
             grp.mode=getmode(rssi), grp.min=min(rssi), grp.max=max(rssi),
             grp.modeshift=100+getmode(rssi), grp.modelog=log10(grp.modeshift),
             grp.modeloge=log(grp.modeshift))
-mu
+#mu
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
 mu$distsq <- mu$distnumeric * mu$distnumeric
+
+
+# determine the ideal chart size - raw and distribution charts
+uniqueDistances <- as.data.frame.factor(unique(mu$distance))
+names(uniqueDistances) <- c("uniqdistance")
+#uniqueDistances
+numUniqueDistances <- NROW(uniqueDistances)
+#numUniqueDistances
+# Check for very large nrows (i.e. readings < 10cm distance)
+#everyXMu <- mu
+#everyXBase <- basedata
+#if (numUniqueDistances > 96) {
+#  seq(1, numUniqueDistances, 10)
+#  uniqueDistances <- dplyr::filter(uniqueDistances, row_number() %% 5 == 1)
+#  numUniqueDistances <- NROW(uniqueDistances)
+#  numUniqueDistances
+#  # now filter source data by these distances
+#  everyXMu <- dplyr::filter(mu,mu$distance %in% uniqueDistances$uniqdistance)
+#  everyXBase <- dplyr::filter(basedata,basedata$distance %in% uniqueDistances$uniqdistance)
+#}
+numCols <- 8
+numRows <- ceiling(numUniqueDistances / numCols)
+if (numRows < 1) {
+  numRows <- 1
+}
+chartWidth <- 300
+chartHeight <- ceiling(numRows/6)*150
+if (chartHeight > 1200) {
+  chartHeight <- 1250
+}
+#uniqueDistancesAgain <- as.data.frame.factor(unique(everyXMu$distance))
+#names(uniqueDistancesAgain) <- c("uniqdistance")
+#numUniqueDistancesAgain <- NROW(uniqueDistancesAgain)
+#numUniqueDistancesAgain
+#uniqueDistancesAgain
+#uniqueDistances
+#numCols
+#numRows
+#chartWidth
+#chartHeight
 
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
@@ -154,13 +193,14 @@ p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance
   geom_vline(data=mu, aes(xintercept=mu$grp.mean - 2*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mean + 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mean - 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-  facet_wrap(~distance, ncol=2, nrow=13, scales="free") +
+  facet_wrap(~distance, ncol=numCols, nrow=numRows, scales="free") +
   labs(x="RSSI values with mean shown and 3 SDs plotted",
        y="Relative density of population",
        title="RSSI population distribution by distance",
-       subtitle="No outliers have been removed. Orange line is the mean value.") 
-p
-ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-raw.png", sep=""), width = 600, height = 1000, units = "mm")
+       subtitle="No outliers have been removed. Orange line is the mean value.")  + 
+  theme(legend.position = "none")
+#p
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-raw.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
 
 
@@ -174,7 +214,7 @@ desd <- ggplot(mu, aes(x=distnumeric, y=sqrt(grp.var), color=3)) +
        title="Distance's effect on standard deviation of RSSI",
        subtitle="Meters and RSSI") + 
   theme(legend.position = "none")
-desd
+#desd
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-sd.png", sep=""))
 
 # Plot Mean RSSI by distance
@@ -189,7 +229,7 @@ demean <- ggplot(mu, aes(x=distnumeric, y=grp.mean, color=4)) +
        title="Regression for Mean RSSI to distance (m)",
        subtitle="Errors bars show +/- 1 standard deviation from mean") + 
   theme(legend.position = "none")
-demean
+#demean
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-mean-sd.png", sep=""))
 
 # Plot mean by distance squared
@@ -203,7 +243,7 @@ desquare <- ggplot(mu, aes(x=distsq, y=grp.mean, color=4)) +
   labs(x="Distance squared (meters)", y="Mean RSSI", 
        title="Regression for Mean RSSI to distance squared(m)") + 
   theme(legend.position = "none")
-desquare
+#desquare
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-squared.png", sep=""))
 
 
@@ -216,7 +256,7 @@ mu <- ddply(basedata, "distance", summarise, grp.var=var(rssi),
             grp.mode=getmode(rssi), grp.min=min(rssi), grp.max=max(rssi),
             grp.modeshift=100+getmode(rssi), grp.modelog=log10(grp.modeshift),
             grp.modeloge=log(grp.modeshift))
-mu
+#mu
 
 # filter each data set by std dev
 for (d in mu$distance) {
@@ -233,8 +273,6 @@ for (d in mu$distance) {
   #write("----",stdout())
 }
 
-# determine the ideal chart size
-
 # Creates multiple plots by distance
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
@@ -248,19 +286,20 @@ p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance
   geom_vline(data=mu, aes(xintercept=mu$grp.mode - 2*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mode + 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
   geom_vline(data=mu, aes(xintercept=mu$grp.mode - 3*sqrt(mu$grp.var)), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-  facet_wrap(~distance, ncol=2, nrow=34, scales="free") +
+  facet_wrap(~distance, ncol=numCols, nrow=numRows, scales="free") +
   labs(x="RSSI values within 3 std devs of original data",
        y="Relative density of population",
        title="RSSI population distribution by distance",
-       subtitle="Outliers beyond 3 standard deviations have been removed") 
-p
-ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distribution.png", sep=""), width = 600, height = 1000, units = "mm")
+       subtitle="Outliers beyond 3 standard deviations have been removed")  + 
+  theme(legend.position = "none")
+#p
+ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
 # Now figure out the regression line - RSSI drops off logarithmically with distance
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
 mu$distlog10 <- log10(mu$distnumeric)
 mu$distloge <- log(mu$distnumeric)
-mu
+#mu
 rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
   geom_point() +
   geom_errorbar(aes(ymin=grp.mode-sqrt(grp.var), ymax=grp.mode+sqrt(grp.var)), 
@@ -272,7 +311,7 @@ rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
        title="Regression for Modal RSSI to log10 of distance (m)",
        subtitle="Errors bars show 1 standard deviation from mode") + 
   theme(legend.position = "none")
-rplot
+#rplot
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-regression.png", sep=""))
 
 # R number almost -1 because we're using mode and not mean
@@ -280,5 +319,4 @@ ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-regression.png", sep=""))
 # Very low p number means a good fit
 #  - See Anderson, Faye. (2016). Re: What is the relationship between R-squared and p-value in a regression?. Retrieved from: https://www.researchgate.net/post/What_is_the_relationship_between_R-squared_and_p-value_in_a_regression/57612faddc332d362552c5f1/citation/download. 
 
-#setwd(origwd)
 write("done",stdout())

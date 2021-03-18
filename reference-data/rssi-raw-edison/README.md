@@ -59,13 +59,13 @@ The phones used for data capture are as follows. Location permission was granted
 | 6S+         | Apple iPhone 6S Plus | iOS 13.6  |                                               |
 | 8+          | Apple iPhone 8 Plus | iOS 13.6   |                                               |
 | X           | Apple iPhone X      | iOS 14.2   |                                               |
-| P2          | Google Pixel 2      | Android 29 | Battery drains unusually fast due to age      |
-| P3          | Google Pixel 3      | Android 30 | Operating System is Android 12 Developer Preview |
+| P2          | Google Pixel 2      | Android 29 | Battery drains unusually fast due to age, TxPower = -16 |
+| P3          | Google Pixel 3      | Android 30 | Operating System is Android 12 Developer Preview, TxPower = -16 |
 | J6          | Samsung J6          | Android 28 | BLE advertising and accelerometer unsupported |
-| A10         | Samsung A10         | Android 28 | BLE address rotates every few seconds         |
-| A20         | Samsung A20         | Android 29 | BLE address rotates every few seconds         |
-| N8          | Samsung Note 8      | Android 28 | BLE address rotates every few seconds         |
-| S9+         | Samsung S9+         | Android 29 | BLE address rotates every few seconds         |
+| A10         | Samsung A10         | Android 28 | BLE address rotates every few seconds, TxPower = -15 |
+| A20         | Samsung A20         | Android 29 | BLE address rotates every few seconds, TxPower = -15 |
+| N8          | Samsung Note 8      | Android 28 | BLE address rotates every few seconds, TxPower = -15 |
+| S9+         | Samsung S9+         | Android 29 | BLE address rotates every few seconds, TxPower = -15 |
 
 ## Reference data
 

@@ -141,6 +141,8 @@ mu <- ddply(basedata, "distance", summarise, grp.var=var(rssi),
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
 mu$distsq <- mu$distnumeric * mu$distnumeric
 
+# Output raw summary
+write.csv(mu,paste(basedir,"/output/",ourtestid,"-","phoneb-summary-raw.csv", sep=""))
 
 # determine the ideal chart size - raw and distribution charts
 uniqueDistances <- as.data.frame.factor(unique(mu$distance))
@@ -273,6 +275,7 @@ for (d in mu$distance) {
   #write("----",stdout())
 }
 
+
 # Creates multiple plots by distance
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
@@ -299,6 +302,10 @@ ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distribution.png", sep="")
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
 mu$distlog10 <- log10(mu$distnumeric)
 mu$distloge <- log(mu$distnumeric)
+
+# Output filtered summary
+write.csv(mu,paste(basedir,"/output/",ourtestid,"-","phoneb-summary-filtered.csv", sep=""))
+
 #mu
 rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
   geom_point() +

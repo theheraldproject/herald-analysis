@@ -113,7 +113,88 @@ Release notes:
 
 **20210305** - All tests from 20210305 shall use an enhanced segmentation algorithm that synchronises time across two devices based on initial detection timestamps. Improving timing accuracy means only +/- 30 seconds of data around segmentation boundary is discarded (instead of +/- 60 seconds) to avoid inclusion of data during movement.  
 
+## Analysis
+
+### Observation
+
+Experiment data captured at 1cm resolution covering 0.0 - 3.4m (20210311 to 20210315) has revealed a recurring undulating pattern where RSSI values change significantly with small movements, and at reasonably predictable intervals. The following two charts show the distribution of RSSI values captured by two Android phones on 20210312, along with the mode value at each 1cm (black line).
+
+*RSSI captured by Pixel 2 (phone A) on 20210312*
+![observation 20210312 A](observation-20210312-A.png)
+
+*RSSI captured by Pixel 3 (phone B) on 20210312*
+![observation 20210312 B](observation-20210312-B.png)
+
+The results show a consistent undulating pattern across the two phones, albeit with slightly different RSSI values at times. Significant changes were observed at specific positions. For example, RSSI is -70 at 0.63m, but drops to -92 at 0.78m, and back up to -70 at 0.87m, thus RSSI changed by 22 units in the space of 15cm and 9cm respectively. Considering circa 200 samples were taken at each 1cm, and the distribution of RSSI values around the mode is limited, the observation suggests the pattern is not random and merits investigation.
+
+The following two charts show the data captured by two iOS phones on 20210313. A similar undulating pattern was observed, although the absolute measurements and distribution are different from the previous experiment. The same pattern was observed in all other experiments (20210311, 20210314, and 20210315).
+
+*RSSI captured by iPhone 6S+ (phone A) on 20210312*
+![observation 20210313 A](observation-20210313-A.png)
+
+*RSSI captured by iPhone 8+ (phone B) on 20210312*
+![observation 20210313 B](observation-20210313-B.png)
+
+All experiment data were combined using dynamic time warping to align the time series by distance based on normalised RSSI values (rank of RSSI, which is scale invariant). This is necessary because the measurements were taken according to distance between the outer casing of the phones, while the exact location of the transmitting and receiving antennae within the phones are unknown. Furthermore, the test environment is imperfect, thus the 1cm steps cannot be exact. The following chart shows the combined data.
+
+![observation combined](observation-combined.png)
+
+The results show the undulating pattern is common across all experiment data. The oscillation varies in magnitude and period, resembling some kind of wave interference and multi-path signal fading models.
+
+### Investigation
+
+A series of investigations were conducted to understand the observations, which previously were assumed to be random interferences and measurement errors when data was captured at a lower resolution (e.g. 10 - 20cm). The investigations identified three key contributors to the observed pattern: (a) path loss, (b) multi-channel interference, and (c) reflections.
+
+#### Path loss
+Overall trend in the reduction of signal strength over distance is typically modelled using the Friis transmission formula which is based on logarithmic trend. The following chart presents observed data, along with fitted linear and log models.
+
+![interference pathloss](interference-pathloss.png)
+
+The results show the log model is a reasonable fit for 0 - 0.4m range, but the linear model is a better fit for the overall trend from 0.2m, especially beyond 2m. Given the main motivation for accurate distance estimation is to enable risk estimation in contact tracing, where the distance range of interest is >= 0.5m, the linear model offers a simple path loss model that opens up opportunities for on-device optimisation and self-calibration over time. For example, using average encounter patterns based on typical user behaviour, and distribution of all RSSI measurements for device specific calibration to avoid reliance on transmit power in calibrating distance estimation.
+
+#### Multi-channel
+BLE adverts are broadcasted on three channels: channel 37 at 2.402 GHz, channel 38 at 2.426 GHz, and channel 39 at 2.480 GHz. Transmitting three signals at different frequencies simultaneously from a common source means constructive and destructive interferences shall be common place even for the line-of-sight signal. A simulation was conducted to assess the potential impact (see [R script](r/MultiChannelModel.R) for details). The following chart presents the simulation output.
+
+![interference multichannel theory](interference-multichannel-theory.png)
+
+The results show interferences between the three channels have significant impact across the entire distance range of interest (0 - 8m), especially within the 0 - 4m range, where the local minima and maxima at around 2.4m and 4m can change by 50%. The following chart presents observed data, along with fitted linear model combined with multi-channel interference.
+
+![interference multichannel](interference-multichannel.png)
+
+The results show multi-channel interference contributes towards the undulating pattern, especially for the dip around 2m followed by unusually large variance around 3m.
+
+#### Reflections
+Multi-path propagation causes constructive and destructive interference, where reflected signals at different phases combine to increase or decrease received signal strength. The impact can be estimated by a simple two-ray ground-reflection model, or a fading model (e.g. Rayleigh, Rician) depending on the context and environment. The following chart presents the observed data, along with fitted linear model, and two-ray model combined with multi-channel interference.
+
+![interference reflection](interference-reflection.png)
+
+The results show interferences between the three channels and reflected signal contribute towards the undulating pattern with variable magnitude and period. The combined effect is particularly marked in the 0 - 1.5m range, then multi-channel interference play a more dominant role from 1.5m onwards. This is inline with expectations for the two-ray model, where the contribution of reflected signals become less prominent with distance.
+
+### Solution
+
+Absolute distance estimation based on RSSI measurements remains an unsolved problem. Test results have shown the same RSSI value is observed at different distances. For example, RSSI is -70 at 0.22m, 0.83m, 1.63m, and 2.47m. However, test results have also shown variation of RSSI values at a fixed distance is minimal, thus the challenge is discovering the complex relationship between RSSI and distance, as opposed to RSSI being a fundamentally unreliable distance estimator.
+
+Investigations and simulations have shown the undulating pattern stems from a combination of physical (path loss, multi-channel) and environmental (reflections) factors. Reflections shall differ in every environment, thus it is impractical to model and counter the impact. Multi-channel is more predictable but is expected to change over time as the three channels drift in phase, thus creating different interference patterns over distance. Path loss has typically been modelled using a logarithmic function, but test results have shown a linear model will suffice for the distance range of interest.
+
+While the impact of multi-channel and reflections cannot be accurately modelled for all environments, the fact that interference causes RSSI to vary over short distances can be exploited to improve distance estimation accuracy in real applications. For contact tracing, the phones are expected to be carried on person, either in pocket or bag, to estimate proximity between people. Under these circumstances, it is unlikely for both phones to be perfectly stationary for long periods, because the slightest movement including just breathing is sufficient to move the phone by a few centimetres. Given the phones are constantly moving, a smoothing function can be applied to reduce the impact of interference over distance. Several smoothing filters were assessed, and the most generally applicable solution was the median over sliding window filter, where the median value of raw RSSI samples from the previous and next 30 seconds (i.e. one minute sliding window) is used as a reliable measurement for distance estimation. The following chart presents the observed data, along with fitted linear model, and smoothed data.
+
+![solution median](solution-median.png)
+
+The results show the smoothing function is effective in reducing the impact of interference on RSSI measurements over distance. Deviation of smoothed data from the fitted linear model is minimal, thus suggesting the approach is effective if the phones are constantly moving, which holds true for the intended application. If both phones are perfectly static (e.g. in typical lab tests, or the phones are both placed on a desk) the approach will fail.
+
+A remaining problem now is scaling the RSSI values for each phone. While the phones all follow the same observed pattern, test results have shown the exact RSSI values differ between phones due to differing transmit power, antennae, casing, and implementation. As such, the linear equation for translating RSSI to distance needs to be scaled accordingly for accurate distance estimation. Previous works have used phone model and transmit power as indicators for calibrating and adjusting the measured values. This is impractical given the wide range of phones on the market, and also subtle differences in manufacturing for phones of the same model. Future work will focus on self-calibration using the distribution of all RSSI values captured by a phone over time, and assumptions about typical human behaviour, e.g. unlikely to be within 0.2m for long periods. It is anticipated that self-calibration should be feasible for the intercept and coefficient parameters.
+
+### Conclusion
+
+Based on the test results, a combination of smoothing over distance and a linear model offers a reasonable estimator of physical distance based on RSSI measurements. The ability to capture many RSSI samples at frequent intervals is fundamental to the approach as minor changes to distance can have a dramatic impact on RSSI values. This observation is exploited by frequent sampling to capture the changes in the undulating pattern, thus the median value over time (and therefore distance) offers a reliable basis for distance estimation. Test results and simulations suggest a sliding window of one minute offers a good balance for effective smoothing while capturing genuine movements. Specifically, the median is taken from a sliding window covering the previous and next 30 seconds. Linear regression across all available data suggests the following parameters for the linear model.
+
+$DistanceInMetres = -17.1021 + -0.2668 \times MedianRssi$
+
+It is anticipated that the generic intercept (-17.1021) and coefficient (-0.2668) parameters shall require adaptation for each phone for best accuracy. Future work shall investigate self-calibration for adjusting these parameters.
+
 ## References
+
+Harald T. Friis (1946) "A Note on a Simple Transmission Formula". Proceedings of the I.R.E. and Waves and Electrons, pp 254–256.
 
 Douglas J. Leith and Stephen Farrell (2020) "Measurement-Based Evaluation Of Google/Apple Exposure Notification API For Proximity Detection in a Commuter Bus". [arXiv:2006.08543](https://arxiv.org/abs/2006.08543)
 

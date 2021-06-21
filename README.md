@@ -8,7 +8,7 @@ project. It currently consists of the following:-
 
 ## License & Copyright
 
-Copyright 2020 VMware, Inc.
+Copyright 2020-2021 Herald Project Contributors
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -71,4 +71,4 @@ for details.
 
 ## Assistance
 
-Please report [issues here](https://github.com/vmware/herald-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.
+Please report [issues here](https://github.com/theheraldproject/herald-analysis/issues) and email oss-coc@vmware.com with any code of conduct open source issues.

@@ -20,10 +20,12 @@ library(caTools)
 basedir <- "/Volumes/TB3-1/git/skunkworks/herald-analysis/reference-data/rssi-raw-edison"
 
 # 2. Set the ID number (as a STRING) of the test you wish to generate charts for (It'll generate charts for both devices under test)
-ourtestid <- "26"
+ourtestid <- "24"
 
 # 3. Do 'select all' and click 'run' in R studio. Download any extensions, if prompted.
 # 4. After a few seconds you'll see output charts generated in the above folder
+
+generateCharts <- FALSE
 
 # DO NOT EDIT BELOW THIS LINE
 outputdir <- paste(basedir , "/output",sep="")
@@ -183,6 +185,7 @@ if (chartHeight > 1200) {
 #chartWidth
 #chartHeight
 
+if (generateCharts) {
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
   geom_density(alpha=0.3, fill=NA, show.legend = F) +
@@ -248,7 +251,7 @@ desquare <- ggplot(mu, aes(x=distsq, y=grp.mean, color=4)) +
 #desquare
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distance-effects-squared.png", sep=""))
 
-
+}
 
 
 
@@ -276,6 +279,7 @@ for (d in mu$distance) {
 }
 
 
+if (generateCharts) {
 # Creates multiple plots by distance
 p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
@@ -297,6 +301,7 @@ p <- ggplot(basedata, aes(x=rssi , y=..density.. , color=distance, fill=distance
   theme(legend.position = "none")
 #p
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+}
 
 # Now figure out the regression line - RSSI drops off logarithmically with distance
 mu$distnumeric <- as.numeric(levels(mu$distance))[mu$distance]
@@ -307,6 +312,8 @@ mu$distloge <- log(mu$distnumeric)
 write.csv(mu,paste(basedir,"/output/",ourtestid,"-","phoneb-summary-filtered.csv", sep=""))
 
 #mu
+
+if (generateCharts) {
 rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
   geom_point() +
   geom_errorbar(aes(ymin=grp.mode-sqrt(grp.var), ymax=grp.mode+sqrt(grp.var)), 
@@ -320,10 +327,46 @@ rplot <- ggplot(mu, aes(x=distlog10, y=grp.mode, color=3)) +
   theme(legend.position = "none")
 #rplot
 ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-regression.png", sep=""))
+}
 
 # R number almost -1 because we're using mode and not mean
 #  - See http://www.fairlynerdy.com/what-is-r-squared/
 # Very low p number means a good fit
 #  - See Anderson, Faye. (2016). Re: What is the relationship between R-squared and p-value in a regression?. Retrieved from: https://www.researchgate.net/post/What_is_the_relationship_between_R-squared_and_p-value_in_a_regression/57612faddc332d362552c5f1/citation/download. 
+
+# Get the regression values as per the chart in variable form
+basedata$distnumeric <- as.numeric(levels(basedata$distance))[basedata$distance]
+basedata$rssinumeric <- as.numeric(unlist(basedata$rssi))
+basedata$distlog10 <- log10(basedata$distnumeric)
+attach(basedata)
+reg <- lm(rssinumeric~distlog10) # NOTE: LOG distance (so factors are small)
+summary(reg)
+reg$coefficients
+
+regressions <- data.frame(matrix(nrow=1,ncol=3))
+names(regressions) <- c("method","intercept","coefficient")
+regressions$method <- "linear-distlog10"
+regressions$intercept <- reg$coefficients['(Intercept)']
+regressions$coefficient <- reg$coefficients['distlog10']
+write.csv(regressions,paste(basedir,"/output/",ourtestid,"-","phoneb-regressions.csv", sep=""))
+
+# Now normalise the data to the expected RSSI
+#for (d in mu$distance) {
+#  idx = which(mu$distance == d)
+#  basedata$nmlrssi <- basedata$rssinumeric - exp((reg$coefficients['(Intercept)'] + (reg$coefficients['grp.mode'] * mu$grp.mode[idx])))
+#  #mutate(nmlrssi = ifelse(distnumeric == d, rssinumeric - exp((reg$coefficients['(Intercept)'] + (reg$coefficients['grp.mode'] * mu$grp.mode[idx]))), rssinumeric))
+#}
+#head(basedata)
+#rplot <- ggplot(basedata, aes(x=distlog10, y=nmlrssi, color=3)) +
+#  geom_point() +
+#  stat_cor(label.x = -0.4, label.y = -5) + 
+#  stat_regline_equation(label.x = -0.4, label.y = -5) +
+#  geom_smooth(method=lm) +
+#  labs(x="log10 of Distance (meters)", y="Modal RSSI", 
+#       title="Regression for normalised RSSI to log10 of distance (m)",
+#       subtitle="Errors bars show 1 standard deviation from mode") + 
+#  theme(legend.position = "none")
+##rplot
+#ggsave(paste(basedir,"/output/",ourtestid,"-","phoneb-regression-nml.png", sep=""))
 
 write("done",stdout())

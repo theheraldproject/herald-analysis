@@ -36,6 +36,9 @@ public abstract class AbstractHttpHandler implements HttpHandler {
 					final String key = URLDecoder.decode(keyValue[0], StandardCharsets.UTF_8.toString());
 					final String value = URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8.toString());
 					parameters.put(key, value);
+				} else if (keyValue.length == 1) {
+					final String key = URLDecoder.decode(keyValue[0], StandardCharsets.UTF_8.toString());
+					parameters.put(key, "");
 				}
 			}
 			logger.log(Level.INFO, "parseRequestParameters(requestParameters=" + requestParameters + ")");

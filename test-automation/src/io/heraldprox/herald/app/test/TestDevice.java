@@ -4,15 +4,18 @@
 
 package io.heraldprox.herald.app.test;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class TestDevice implements Comparable<TestDevice> {
+	private final static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public final String model;
 	public final String operatingSystem;
 	public final String operatingSystemVersion;
 	public final String payload;
 	public String status;
 	public Date lastSeen;
+	public String lastSeenString;
 	public String commands = null;
 
 	public TestDevice(final String model, final String operatingSystem, final String operatingSystemVersion,
@@ -22,18 +25,23 @@ public class TestDevice implements Comparable<TestDevice> {
 		this.operatingSystemVersion = operatingSystemVersion;
 		this.payload = payload;
 		this.status = status;
-		this.lastSeen = new Date();
+		seen();
 	}
 
 	public String id() {
 		return String.join("::", model, operatingSystem, operatingSystemVersion, payload).intern();
 	}
 
+	public void seen() {
+		this.lastSeen = new Date();
+		this.lastSeenString = dateFormatter.format(lastSeen);
+	}
+
 	@Override
 	public String toString() {
 		return "TestDevice [model=" + model + ", operatingSystem=" + operatingSystem + ", operatingSystemVersion="
-				+ operatingSystemVersion + ", payload=" + payload + ", status=" + status + ", lastSeen=" + lastSeen
-				+ ", commands=" + commands + "]";
+				+ operatingSystemVersion + ", payload=" + payload + ", status=" + status + ", lastSeen="
+				+ lastSeenString + ", commands=" + commands + "]";
 	}
 
 	@Override

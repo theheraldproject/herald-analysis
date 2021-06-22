@@ -25,15 +25,15 @@ public class TestDevice implements Comparable<TestDevice> {
 		this.operatingSystemVersion = operatingSystemVersion;
 		this.payload = payload;
 		this.status = status;
-		seen();
+		lastSeen(new Date());
 	}
 
 	public String id() {
 		return String.join("::", model, operatingSystem, operatingSystemVersion, payload).intern();
 	}
 
-	public void seen() {
-		this.lastSeen = new Date();
+	public void lastSeen(final Date time) {
+		this.lastSeen = time;
 		this.lastSeenString = dateFormatter.format(lastSeen);
 	}
 

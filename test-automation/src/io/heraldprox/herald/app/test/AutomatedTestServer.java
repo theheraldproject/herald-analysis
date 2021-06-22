@@ -155,12 +155,13 @@ public class AutomatedTestServer {
 	 * @return Registered test device.
 	 */
 	public synchronized TestDevice heartbeat(final TestDevice testDevice) {
-		final TestDevice knownTestDevice = testDevices.get(testDevice.id());
+		TestDevice knownTestDevice = testDevices.get(testDevice.id());
 		if (null == knownTestDevice) {
 			testDevices.put(testDevice.id(), testDevice);
+			knownTestDevice = testDevice;
 		} else {
 			knownTestDevice.status = testDevice.status;
-			knownTestDevice.lastSeen = testDevice.lastSeen;
+			knownTestDevice.lastSeen(testDevice.lastSeen);
 		}
 		logger.log(Level.INFO, "heartbeat (device=" + knownTestDevice + ")");
 		return knownTestDevice;
@@ -291,7 +292,7 @@ public class AutomatedTestServer {
 	 * @param inputStream Content of the uploaded file.
 	 * @return Total bytes received.
 	 */
-	public long upload(final TestDevice testDevice, final String filename, final InputStream inputStream) {
+	public synchronized long upload(final TestDevice testDevice, final String filename, final InputStream inputStream) {
 		final TestDevice knownTestDevice = heartbeat(testDevice);
 		final String deviceFolderName = (knownTestDevice.model + "_" + knownTestDevice.payload)
 				.replaceAll("[^a-zA-Z0-9_]", "");

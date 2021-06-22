@@ -28,7 +28,7 @@ public class UploadHandler extends AbstractHttpHandler {
 
 	@Override
 	public void handle(HttpExchange httpExchange) throws IOException {
-		logger.log(Level.INFO, "heartbeat (remote=" + httpExchange.getRemoteAddress() + ",uri="
+		logger.log(Level.INFO, "upload (remote=" + httpExchange.getRemoteAddress() + ",uri="
 				+ httpExchange.getRequestURI().toString() + ")");
 		// Parse parameters
 		final Map<String, String> parameters = parseRequestParameters(httpExchange);

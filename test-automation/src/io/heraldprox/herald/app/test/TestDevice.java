@@ -9,6 +9,7 @@ import java.util.Date;
 
 public class TestDevice implements Comparable<TestDevice> {
 	private final static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	public int id = -1;
 	public final String model;
 	public final String operatingSystem;
 	public final String operatingSystemVersion;
@@ -28,7 +29,7 @@ public class TestDevice implements Comparable<TestDevice> {
 		lastSeen(new Date());
 	}
 
-	public String id() {
+	public String label() {
 		return String.join("::", model, operatingSystem, operatingSystemVersion, payload).intern();
 	}
 
@@ -39,14 +40,14 @@ public class TestDevice implements Comparable<TestDevice> {
 
 	@Override
 	public String toString() {
-		return "TestDevice [model=" + model + ", operatingSystem=" + operatingSystem + ", operatingSystemVersion="
-				+ operatingSystemVersion + ", payload=" + payload + ", status=" + status + ", lastSeen="
-				+ lastSeenString + ", commands=" + commands + "]";
+		return "TestDevice [id=" + id + ", model=" + model + ", operatingSystem=" + operatingSystem
+				+ ", operatingSystemVersion=" + operatingSystemVersion + ", payload=" + payload + ", status=" + status
+				+ ", lastSeen=" + lastSeenString + ", commands=" + commands + "]";
 	}
 
 	@Override
 	public int compareTo(TestDevice other) {
-		return id().compareTo(other.id());
+		return label().compareTo(other.label());
 	}
 
 }

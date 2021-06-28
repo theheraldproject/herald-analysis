@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,8 +46,8 @@ public class AutomatedTestServer {
 	private final Map<String, TestDevice> testDevices = new ConcurrentHashMap<>();
 	private final File uploadFolder;
 	private final List<ScheduledBroadcast> scheduledBroadcasts = new ArrayList<>();
-	private final Timer timer;
 	private String uploadSubfolderName = "default";
+	private final AtomicInteger idGenerator = new AtomicInteger();
 
 	private final class ScheduledBroadcast {
 		public final String commands;
@@ -74,7 +75,7 @@ public class AutomatedTestServer {
 		this.httpServer = HttpServer.create(new InetSocketAddress(host, port), backLogging);
 		this.threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(threadPool);
 		this.uploadFolder = uploadFolder;
-		this.timer = scheduledCommandsTimer();
+		scheduledCommandsTimer();
 		httpServer.setExecutor(threadPoolExecutor);
 		logger.log(Level.INFO, "Server created (host=" + host + ",port=" + port + ",backLogging=" + backLogging
 				+ ",threadPool=" + threadPool + ",uploadFolder=" + uploadFolder + ")");
@@ -135,6 +136,18 @@ public class AutomatedTestServer {
 	// MARK: - main(host,port,backLogging,threadPool,uploadFolder)
 
 	public static void main(String[] args) throws Throwable {
+		if (args.length != 5) {
+			System.err.println("Herald : Automated Test Server");
+			System.err.println();
+			System.err.println("Usage: automatedTestServer.jar [host] [port] [backlog] [threads] [folder]");
+			System.err.println();
+			System.err.println("- host : Server address");
+			System.err.println("- port : Server port");
+			System.err.println("- backlog : Maximum number of queued requests");
+			System.err.println("- threads : Maximum number of concurrent requests");
+			System.err.println("- folder  : Folder for storing uploaded files");
+		}
+
 		final String host = args[0];
 		final int port = Integer.parseInt(args[1]);
 		final int backLogging = Integer.parseInt(args[2]);
@@ -155,9 +168,10 @@ public class AutomatedTestServer {
 	 * @return Registered test device.
 	 */
 	public synchronized TestDevice heartbeat(final TestDevice testDevice) {
-		TestDevice knownTestDevice = testDevices.get(testDevice.id());
+		TestDevice knownTestDevice = testDevices.get(testDevice.label());
 		if (null == knownTestDevice) {
-			testDevices.put(testDevice.id(), testDevice);
+			testDevices.put(testDevice.label(), testDevice);
+			testDevice.id = idGenerator.incrementAndGet();
 			knownTestDevice = testDevice;
 		} else {
 			knownTestDevice.status = testDevice.status;
@@ -174,7 +188,7 @@ public class AutomatedTestServer {
 	 * @return Pending commands, or null if none.
 	 */
 	public synchronized String getAndClearCommands(final TestDevice testDevice) {
-		final TestDevice knownTestDevice = testDevices.get(testDevice.id());
+		final TestDevice knownTestDevice = testDevices.get(testDevice.label());
 		if (null != knownTestDevice) {
 			final String commands = knownTestDevice.commands;
 			testDevice.commands = null;
@@ -206,6 +220,26 @@ public class AutomatedTestServer {
 			} else {
 				testDevice.commands = (null == testDevice.commands || testDevice.commands.isEmpty() ? commands
 						: testDevice.commands + "," + commands);
+			}
+		}
+	}
+
+	/**
+	 * Set pending commands for broadcasting to all clients on next heart beat.
+	 * 
+	 * @param id       Broadcast commands to a
+	 * @param commands Pending commands, or null to cancel current command.
+	 */
+	public synchronized void broadcast(final int id, final String commands) {
+		for (final TestDevice testDevice : testDevices.values()) {
+			if (id == testDevice.id) {
+				if (null == commands) {
+					testDevice.commands = commands;
+				} else {
+					testDevice.commands = (null == testDevice.commands || testDevice.commands.isEmpty() ? commands
+							: testDevice.commands + "," + commands);
+				}
+				return;
 			}
 		}
 	}
@@ -268,6 +302,20 @@ public class AutomatedTestServer {
 			logger.log(Level.WARNING, "status, failed to generate JSON");
 			return "[ ]";
 		}
+	}
+
+	public synchronized String statusCsv() {
+		final List<TestDevice> testDeviceList = new ArrayList<>(testDevices.values());
+		Collections.sort(testDeviceList);
+		final StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append("model,os,version,payload,status,lastSeen,id,commands\n");
+		for (final TestDevice testDevice : testDeviceList) {
+			final String row = String.join(",", testDevice.model, testDevice.operatingSystem,
+					testDevice.operatingSystemVersion, testDevice.payload, testDevice.status, testDevice.lastSeenString,
+					Integer.toString(testDevice.id), "\"" + testDevice.commands + "\"");
+			stringBuilder.append(row + "\n");
+		}
+		return stringBuilder.toString();
 	}
 
 	// MARK: - Upload

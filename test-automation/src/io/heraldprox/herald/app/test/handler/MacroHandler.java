@@ -24,6 +24,10 @@ import io.heraldprox.herald.app.test.AutomatedTestServer;
  */
 public class MacroHandler extends AbstractHttpHandler {
 	private final static Logger logger = Logger.getLogger(MacroHandler.class.getName());
+	private final static String[] uploadFilesEfficacy = new String[] { "contacts.csv", "detection.csv",
+			"statistics.csv", "battery.csv", "timeToConnectDevice.csv", "timeToProcessDevice.csv" };
+	private final static String[] uploadFilesAll = new String[] { "contacts.csv", "detection.csv", "statistics.csv",
+			"battery.csv", "timeToConnectDevice.csv", "timeToProcessDevice.csv", "log.txt" };
 
 	public MacroHandler(final AutomatedTestServer automatedTestServer) {
 		super(automatedTestServer);
@@ -43,14 +47,8 @@ public class MacroHandler extends AbstractHttpHandler {
 			logger.log(Level.INFO, "macro, reset devices (remote=" + httpExchange.getRemoteAddress() + ")");
 		} else if ("upload".equals(script)) {
 			final String scope = parameters.getOrDefault("scope", "efficacy");
-			String[] files = new String[0];
-			if ("efficacy".equals(scope)) {
-				files = new String[] { "contacts.csv", "detection.csv", "statistics.csv", "battery.csv" };
-			} else {
-				files = new String[] { "contacts.csv", "detection.csv", "statistics.csv", "battery.csv", "log.txt" };
-			}
 			final List<String> commands = new ArrayList<>();
-			for (final String file : files) {
+			for (final String file : ("efficacy".equals(scope) ? uploadFilesEfficacy : uploadFilesAll)) {
 				commands.add("upload(" + file + ")");
 			}
 			automatedTestServer.uploadSubfolderNameNow();
@@ -65,8 +63,7 @@ public class MacroHandler extends AbstractHttpHandler {
 			// Stop,Upload after
 			final List<String> commands = new ArrayList<>();
 			commands.add("stop");
-			for (final String file : new String[] { "contacts.csv", "detection.csv", "statistics.csv", "battery.csv",
-					"log.txt" }) {
+			for (final String file : uploadFilesAll) {
 				commands.add("upload(" + file + ")");
 			}
 			automatedTestServer.uploadSubfolderNameNow();

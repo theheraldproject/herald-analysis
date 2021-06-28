@@ -5,6 +5,7 @@
 package io.heraldprox.herald.app.test.handler;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +28,13 @@ public class StatusHandler extends AbstractHttpHandler {
 	public void handle(HttpExchange httpExchange) throws IOException {
 		logger.log(Level.INFO, "status (remote=" + httpExchange.getRemoteAddress() + ",uri="
 				+ httpExchange.getRequestURI().toString() + ")");
-		final String response = automatedTestServer.status();
+		final Map<String, String> parameters = parseRequestParameters(httpExchange);
+		String response = "";
+		if (parameters.containsKey("csv")) {
+			response = automatedTestServer.statusCsv();
+		} else {
+			response = automatedTestServer.status();
+		}
 		sendResponse(httpExchange, 200, response);
 		logger.log(Level.INFO, "status, complete (remote=" + httpExchange.getRemoteAddress() + ")");
 	}

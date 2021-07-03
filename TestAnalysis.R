@@ -12,12 +12,12 @@ library(scales)
 library(caTools)
 
 # 1. Set the folder that contains a sub folder per phone in the test
-basedir <- "/Volumes/TB3-1/git/skunkworks/test-data/2021-06-21-v2"
+basedir <- "/home/user/data/testrun"
 # 2. Set the app name and version (for the chart titles)
 appversion <- "herald"
 
 # 3. (Optional) Time shift - If your protocol saves time in different time zones between mobile OS'
-timeshift <- 1 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
+timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
 # Gets applied to Android only
 # Set this wide by +/ 1 day until you figure out the right timeshift value
 

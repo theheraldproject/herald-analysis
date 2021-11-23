@@ -35,7 +35,7 @@ test works:-
 
 The below data sets are available:-
 
-- RSSI & Accelerometer readings at different distances for 4 phones [Edison RSSI README](rssi-raw-edison/README.md)
+- RSSI & Accelerometer readings at different distances [RSSI Reference Data README](rssi-raw-edison/README.md)
 
 ## Further datasets
 

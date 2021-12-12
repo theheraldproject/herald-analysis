@@ -20,13 +20,13 @@ library(stringr)
 basedir <- "./sample-output/2020-08-11-cx-47"
 phonedir <- "Pixel3XL"
 
-filtertimemin <- as.POSIXct(paste("2021-12-12", "09:00:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemin <- as.POSIXct(paste("2021-11-16", "01:00:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemin
-filtertimemax <- as.POSIXct(paste("2021-12-12", "21:00:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2021-11-16", "23:00:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemax
 
-cestart <- as.POSIXct(paste("2021-12-12", "09:00:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2021-12-12", "21:00:00"), format="%Y-%m-%d %H:%M:%S")
+cestart <- as.POSIXct(paste("2021-11-16", "01:00:00"), format="%Y-%m-%d %H:%M:%S")
+ceend <-   as.POSIXct(paste("2021-11-16", "23:00:00"), format="%Y-%m-%d %H:%M:%S")
 
 thisdir <- paste(basedir,phonedir,sep="/")
 
@@ -73,14 +73,14 @@ measures$rssiint <- as.numeric(measures$rssi)
 head(measures)
 
 
-chartWidth <- 300
-chartHeight <- 200
+chartWidth <- 1200
+chartHeight <- 800
 
 # Graph 1a&b - Show RSSI frequencies by macuuid across whole time period
 # Note: As devices rotate mac address, some devices will be the same but 
 #       appear as different mac addresses
 p <- ggplot(measures, aes(x=rssiint, color=macuuid, fill=macuuid)) +
-  geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
   labs(x="RSSI",
        y="Count of each RSSI value",
        title="RSSI histogram for each phone detected",
@@ -90,7 +90,7 @@ p
 ggsave(paste(basedir,"/",phonedir,"-rssi-values.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
 p <- ggplot(measures, aes(x=rssiint, y=..density..  , color=macuuid, fill=macuuid)) +
-  geom_histogram(alpha=0.5, binwidth=1, show.legend=T) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
   geom_density(alpha=0.3, fill=NA, show.legend = F) +
   labs(x="RSSI",
        y="Relative Density",
@@ -102,8 +102,8 @@ ggsave(paste(basedir,"/",phonedir,"-rssi-density.png", sep=""), width = chartWid
 
 # Graph 2 - Smoothed line of rssi over time (3 degrees of freedom)
 p <- ggplot(measures, aes(x=t,y=rssi,color=macuuid)) +
-  geom_point() +
-  geom_smooth(method="lm", formula=y ~ poly(x,3))
+  geom_point(show.legend = F) +
+  geom_smooth(method="lm", formula=y ~ poly(x,3), show.legend = F)
 #  geom_smooth(method="loess")
 p
 ggsave(paste(basedir,"/",phonedir,"-rssi-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")

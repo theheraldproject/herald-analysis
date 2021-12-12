@@ -1,10 +1,12 @@
 # Apache 2.0 licensed
 # 
 # Copyright (c) 2020-2021 Herald Project Contributors
-# 
 
-# Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+# Author Adam Fowler <adam@adamfowler.org>
 # File originally in the herald-calibration project but copied here to be used for reference data analysis
+
+# This file provides analysis of RSSI vs known distance for robot based
+# automated testing at 1cm intervals (See the Edison tests for details).
 
 library(plyr)
 library(dplyr)

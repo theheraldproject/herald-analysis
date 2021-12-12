@@ -4,6 +4,8 @@
 
 # Author Adam Fowler adamf@vmware.com adam@adamfowler.org
 
+# This file provides Fair Efficacy Formula multi-device test analytics.
+
 library(plyr)
 library(chron)
 library(ggplot2)

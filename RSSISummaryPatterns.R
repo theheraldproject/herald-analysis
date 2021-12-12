@@ -1,9 +1,11 @@
 # Apache 2.0 licensed
 # 
 # Copyright (c) 2021 Herald Project Contributors
-# 
 
 # Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+
+# This file complements RSSIAnalysis.R to show regression of a simple
+# RSSI to distance conversion for a single pair of (uncalibrated) phones.
 
 library(plyr)
 library(dplyr)

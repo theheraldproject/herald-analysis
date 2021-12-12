@@ -20,13 +20,9 @@ library(stringr)
 basedir <- "./sample-output/2020-08-11-cx-47"
 phonedir <- "Pixel3XL"
 
-filtertimemin <- as.POSIXct(paste("2021-11-14", "16:00:00"), format="%Y-%m-%d %H:%M:%S")
-filtertimemin
-filtertimemax <- as.POSIXct(paste("2021-11-15", "00:30:00"), format="%Y-%m-%d %H:%M:%S")
-filtertimemax
-
-cestart <- as.POSIXct(paste("2021-11-16", "01:00:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2021-11-16", "23:00:00"), format="%Y-%m-%d %H:%M:%S")
+# Filter data stored by the dates of interest (if phone is not cleared between tests)
+filtertimemin <- as.POSIXct(paste("2021-11-16", "12:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2021-11-16", "18:45:00"), format="%Y-%m-%d %H:%M:%S")
 
 thisdir <- paste(basedir,phonedir,sep="/")
 
@@ -49,7 +45,7 @@ head(csvdata)
 measures <- dplyr::filter(csvdata,measure==3)
 head(measures)
 measures <- dplyr::select(measures,c("time","id","data"))
-#measures <- dplyr::distinct(measures)
+#measures <- dplyr::distinct(measures) # DO NOT DO THIS - reduces RSSI data
 names(measures) <- c("time","macuuid","data")
 head(measures)
 
@@ -66,8 +62,6 @@ rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(,TxPower:([0-9]+))?"
 #head(matches)
 measures$rssi <- str_match(measures$data,rssiAndTxPowerPattern)[,2]
 measures$txpower <- str_match(measures$data,rssiAndTxPowerPattern)[,4]
-#measures %>%
-#  dplyr::mutate(rssi = str_match(measures$data,rssiAndTxPowerPattern)[,2])
 head(measures)
 
 # Filter out those without RSSI
@@ -75,12 +69,22 @@ measures <- dplyr::filter(measures,!is.na(rssi))
 measures$rssiint <- as.numeric(measures$rssi)
 head(measures)
 
+
+
+
+
+
+
+# PART A
+# Analyse RSSI values
+
 # Filter invalid RSSIs (Same as we do in the Herald analysis API)
 measures <- dplyr::filter(measures,rssiint>-100)
 
-#measures <- dplyr::select(measures,c("time","id","rssiint","txpower"))
-#names(measures) <- c("time","macuuid","rssiint","txpower")
-#head(measures)
+# Limit columns to only those of interest (performance tweak)
+measures <- dplyr::select(measures,c("t","macuuid","rssiint","txpower"))
+names(measures) <- c("t","macuuid","rssiint","txpower")
+head(measures)
 
 chartWidth <- 400
 chartHeight <- 300
@@ -115,12 +119,25 @@ p <- ggplot(measures, aes(x=t,y=rssiint,color=macuuid)) +
   labs(x="Time",
        y="RSSI",
        title="RSSI detected over time",
-       subtitle="Some phones may be duplicates")
+       subtitle="Some phones may be duplicates") +
+  scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
 #  + geom_smooth(method="lm", formula=y ~ poly(x,3), show.legend = F)
 #  geom_smooth(method="loess")
 p
 ggsave(paste(basedir,"/",phonedir,"-rssi-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
+
+
+
+
+
+# PART B
 # Now analyse txpower
-#withtxpower <- dplyr::filter(measures,!is.na(txpower))
-#head(withtxpower)
+withtxpower <- dplyr::filter(measures,!is.na(txpower))
+withtxpower$txpowerint <- as.numeric(withtxpower$txpower)
+# Limit columns to only those of interest (performance tweak)
+withtxpower <- dplyr::select(withtxpower,c("t","macuuid","rssiint","txpowerint"))
+names(withtxpower) <- c("t","macuuid","rssiint","txpowerint")
+head(withtxpower)
+
+# TODO add 'correction' logic for txPower of the remote (partial, ideally need both sides)

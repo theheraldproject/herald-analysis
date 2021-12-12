@@ -60,7 +60,7 @@ measures$t <- as.POSIXct(measures$time, format="%Y-%m-%d %H:%M:%S")
 head(measures)
 
 # Now extract RSSI and txPower (if present)
-rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(TxPower:([0-9]+))?"
+rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(,TxPower:([0-9]+))?"
 matches <- str_match(measures$data,rssiAndTxPowerPattern)
 head(matches)
 measures$rssi <- str_match(measures$data,rssiAndTxPowerPattern)[,2]
@@ -76,7 +76,7 @@ head(measures)
 chartWidth <- 300
 chartHeight <- 200
 
-# Graph 1 - Show RSSI frequencies by macuuid across whole time period
+# Graph 1a&b - Show RSSI frequencies by macuuid across whole time period
 # Note: As devices rotate mac address, some devices will be the same but 
 #       appear as different mac addresses
 p <- ggplot(measures, aes(x=rssiint, color=macuuid, fill=macuuid)) +
@@ -100,8 +100,13 @@ p <- ggplot(measures, aes(x=rssiint, y=..density..  , color=macuuid, fill=macuui
 p
 ggsave(paste(basedir,"/",phonedir,"-rssi-density.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
-
-
+# Graph 2 - Smoothed line of rssi over time (3 degrees of freedom)
+p <- ggplot(measures, aes(x=t,y=rssi,color=macuuid)) +
+  geom_point() +
+  geom_smooth(method="lm", formula=y ~ poly(x,3))
+#  geom_smooth(method="loess")
+p
+ggsave(paste(basedir,"/",phonedir,"-rssi-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
 # Now analyse txpower
 #withtxpower <- dplyr::filter(measures,!is.na(txpower))

@@ -57,9 +57,10 @@ measures <- dplyr::filter(measures,t<=filtertimemax)
 head(measures)
 
 # Now extract RSSI and txPower (if present)
-rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(,TxPower:([0-9]+))?"
-#matches <- str_match(measures$data,rssiAndTxPowerPattern)
-#head(matches)
+# Example $data value: RSSI:-97.0[BLETransmitPower:8.0]
+rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(.BLETransmitPower:([0-9.]+).)?"
+matches <- str_match(measures$data,rssiAndTxPowerPattern)
+head(matches)
 measures$rssi <- str_match(measures$data,rssiAndTxPowerPattern)[,2]
 measures$txpower <- str_match(measures$data,rssiAndTxPowerPattern)[,4]
 head(measures)
@@ -89,6 +90,9 @@ head(measures)
 chartWidth <- 400
 chartHeight <- 300
 
+rssiCharts <- TRUE
+
+if (rssiCharts) {
 # Graph 1a&b - Show RSSI frequencies by macuuid across whole time period
 # Note: As devices rotate mac address, some devices will be the same but 
 #       appear as different mac addresses
@@ -154,17 +158,25 @@ ggsave(paste(basedir,"/",phonedir,"-rssi-distribution.png", sep=""), width = cha
 
 # TODO Calculate the likely distance drop out RSSI, and the likely nearest distance RSSI values
 
-
+} # end if rssiCharts
 
 
 
 # PART B
 # Now analyse txpower
 withtxpower <- dplyr::filter(measures,!is.na(txpower))
+head(withtxpower)
 withtxpower$txpowerint <- as.numeric(withtxpower$txpower)
 # Limit columns to only those of interest (performance tweak)
 withtxpower <- dplyr::select(withtxpower,c("t","macuuid","rssiint","txpowerint"))
 names(withtxpower) <- c("t","macuuid","rssiint","txpowerint")
 head(withtxpower)
+
+# Stats B1 - Calculate mean & sd of RSSI for each txpowerint value
+txsummary <- withtxpower %>%
+  dplyr::group_by(txpowerint) %>%
+  dplyr::summarise(mean=mean(rssiint), sd=sd(rssiint), min=min(rssiint), max=max(rssiint), n=dplyr::n())
+head(txsummary)
+write.csv(txsummary,paste(basedir , "/", phonedir,"-txpower-distribution.csv",sep=""))
 
 # TODO add 'correction' logic for txPower of the remote (partial, ideally need both sides)

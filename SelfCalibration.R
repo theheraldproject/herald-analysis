@@ -126,6 +126,33 @@ p <- ggplot(measures, aes(x=t,y=rssiint,color=macuuid)) +
 p
 ggsave(paste(basedir,"/",phonedir,"-rssi-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
+# Graph 3 - All RSSIs against a calculated normal distribution
+meanrssi <- mean(measures$rssiint)
+sdrssi <- sd(measures$rssiint)
+countrssi <- NROW(measures)
+minrssi <- min(measures$rssi)
+maxrssi <- max(measures$rssi)
+print(paste("Stats for RSSI: mean=",meanrssi," sd=",sdrssi," n=",countrssi, sep=""))
+p <- ggplot(measures, aes(x=rssiint,color=1, fill=1)) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
+  geom_vline(data=measures, aes(xintercept=meanrssi), color="orange", linetype="dashed", size=1, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=maxrssi), color="black", linetype="solid", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=minrssi), color="black", linetype="solid", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi + sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi - sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi + 2*sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi - 2*sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi + 3*sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  geom_vline(data=measures, aes(xintercept=meanrssi - 3*sdrssi), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+  labs(x="RSSI",
+       y="Relative Frequency",
+       title="RSSI Frequency",
+       subtitle="Across all interactions") + 
+  stat_function(fun = dnorm, args = list(mean = meanrssi, sd = sdrssi), show.legend = F)
+p
+ggsave(paste(basedir,"/",phonedir,"-rssi-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+
+# TODO Calculate the likely distance drop out RSSI, and the likely nearest distance RSSI values
 
 
 

@@ -80,12 +80,72 @@ head(measures)
 # Analyse RSSI values
 
 # Filter invalid RSSIs (Same as we do in the Herald analysis API)
-measures <- dplyr::filter(measures,rssiint>-100)
+measures <- dplyr::filter(measures,rssiint>-99)
+
+
+
+
+# CALIBRATION FILTERING
+# Now filter by mean rssi < cut off
+validmacs <- measures %>%
+  dplyr::group_by(macuuid) %>%
+  dplyr::summarise(mean=mean(rssiint), sd=sd(rssiint), min=min(rssiint), max=max(rssiint), n=dplyr::n())
+cepre <- NROW(validmacs)
+
+# Save summary for introspection
+prefilterrssisummary <- validmacs %>%
+  dplyr::group_by(mean) %>%
+  dplyr::summarise(cnt=dplyr::n())
+p <- ggplot(prefilterrssisummary, aes(x=mean, color=cnt, fill=cnt)) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
+  labs(x="Mean RSSI",
+       y="Number of encounters with this mean",
+       title="Mean RSSI histogram by frequency")  + 
+  theme(legend.position = "bottom")
+p
+ggsave(paste(basedir,"/",phonedir,"-rssi-mean-freq-prefilter.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+
+
+
+# Then filter by min number
+validmacs <-  dplyr::filter(validmacs,mean > -85) # & n > 15)
+head(validmacs)
+
+cepost <- NROW(validmacs)
+
+postfilterrssisummary <- validmacs %>%
+  dplyr::group_by(mean) %>%
+  dplyr::summarise(cnt=dplyr::n())
+p <- ggplot(postfilterrssisummary, aes(x=mean, color=cnt, fill=cnt)) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
+  labs(x="Mean RSSI",
+       y="Number of encounters with this mean",
+       title="Mean RSSI histogram by frequency")  + 
+  theme(legend.position = "bottom")
+p
+ggsave(paste(basedir,"/",phonedir,"-rssi-mean-freq-postfilter.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+
+
+
+
+
+measures <- dplyr::filter(measures,macuuid %in% validmacs$macuuid)
+
+
+
+
 
 # Limit columns to only those of interest (performance tweak)
 measures <- dplyr::select(measures,c("t","macuuid","rssiint","txpower"))
 names(measures) <- c("t","macuuid","rssiint","txpower")
 head(measures)
+
+# Some summary stats
+meanrssi <- mean(measures$rssiint)
+sdrssi <- sd(measures$rssiint)
+countrssi <- NROW(measures)
+minrssi <- min(measures$rssi)
+maxrssi <- max(measures$rssi)
 
 chartWidth <- 400
 chartHeight <- 300
@@ -131,11 +191,6 @@ p
 ggsave(paste(basedir,"/",phonedir,"-rssi-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
 # Graph 3 - All RSSIs against a calculated normal distribution
-meanrssi <- mean(measures$rssiint)
-sdrssi <- sd(measures$rssiint)
-countrssi <- NROW(measures)
-minrssi <- min(measures$rssi)
-maxrssi <- max(measures$rssi)
 print(paste("Stats for RSSI: mean=",meanrssi," sd=",sdrssi," n=",countrssi, sep=""))
 p <- ggplot(measures, aes(x=rssiint,color=1, fill=1)) +
   geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
@@ -158,12 +213,24 @@ ggsave(paste(basedir,"/",phonedir,"-rssi-distribution.png", sep=""), width = cha
 
 # TODO Calculate the likely distance drop out RSSI, and the likely nearest distance RSSI values
 
+
+# TODO add plot for maxrssi and min rssi per remote device (To see if we can/should filter 'far' devices generally)
+# Trim all those whose max rssi did not exceed the mean?
+
 } # end if rssiCharts
+
+
+
 
 
 
 # PART B
 # Now analyse txpower
+
+dotxpower <- FALSE
+
+if (dotxpower) {
+
 withtxpower <- dplyr::filter(measures,!is.na(txpower))
 head(withtxpower)
 withtxpower$txpowerint <- as.numeric(withtxpower$txpower)
@@ -180,3 +247,7 @@ head(txsummary)
 write.csv(txsummary,paste(basedir , "/", phonedir,"-txpower-distribution.csv",sep=""))
 
 # TODO add 'correction' logic for txPower of the remote (partial, ideally need both sides)
+
+} # end if dotxpower
+
+print(paste("Valid Contact Events (Mac Addresses) pre filtering:", cepre, "and post filtering:", cepost," "))

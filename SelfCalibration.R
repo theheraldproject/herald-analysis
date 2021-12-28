@@ -184,6 +184,7 @@ p <- ggplot(measures, aes(x=t,y=rssiint,color=macuuid)) +
        y="RSSI",
        title="RSSI detected over time",
        subtitle="Some phones may be duplicates") +
+  #scale_x_datetime(date_breaks = "10 min", date_minor_breaks = "2 min")
   scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
 #  + geom_smooth(method="lm", formula=y ~ poly(x,3), show.legend = F)
 #  geom_smooth(method="loess")
@@ -211,17 +212,49 @@ p <- ggplot(measures, aes(x=rssiint,color=1, fill=1)) +
 p
 ggsave(paste(basedir,"/",phonedir,"-rssi-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
-# TODO Calculate the likely distance drop out RSSI, and the likely nearest distance RSSI values
-
-
-# TODO add plot for maxrssi and min rssi per remote device (To see if we can/should filter 'far' devices generally)
-# Trim all those whose max rssi did not exceed the mean?
-
 } # end if rssiCharts
 
+# A2 Try to normalise these values - by using the mean and local maxima peaks based on human behaviour
+# - First, Filter for only those rssiint between -3 (or -97) and -1 SD and 1 and 3 SD (or minrssi if smaller)
+weakmin <- max(meanrssi - (3 * sdrssi), -98)# -98 is the boundary value for bluetooth chips to receive data, so ignore
+weakmax <- meanrssi - sdrssi
+strongmin <- meanrssi + sdrssi
+strongmax <- min(meanrssi + (3 * sdrssi), maxrssi, 0)
+sdmeasures <- dplyr::filter(measures, (rssiint > weakmin & rssiint <= weakmax) | (rssiint >= strongmin & rssiint <= strongmax))
+# Chart these as a debug step
 
+p <- ggplot(sdmeasures, aes(x=rssiint)) +
+  geom_histogram(alpha=0.5, binwidth=1, show.legend=F, aes( y=..density.. )) +
+  labs(x="RSSI In Range",
+       y="Number of values",
+       title="RSSIs in range of local maxima")  + 
+  theme(legend.position = "bottom") + 
+  stat_function(fun = dnorm, args = list(mean = meanrssi, sd = sdrssi), show.legend = F)
+p
+ggsave(paste(basedir,"/",phonedir,"-debug-rssivalues.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
 
+# - Second, for each RSSI, find local proportion above the curve (local maxima) beyond 1 SD
+rssicounts <- sdmeasures %>%
+  dplyr::group_by(rssiint) %>%
+  dplyr::summarise(cnt=dplyr::n())
+rssicounts$probrssi <- countrssi * (pnorm(rssicounts$rssiint - 0.5, mean = meanrssi, sd = sdrssi, lower.tail=FALSE) - pnorm(rssicounts$rssiint + 0.5, mean = meanrssi, sd = sdrssi, lower.tail=FALSE) )
+rssicounts$abovecurve <- rssicounts$cnt - rssicounts$probrssi
+head(rssicounts)
+rssicounts <- dplyr::filter(rssicounts, abovecurve > 0)
+rssicounts$abovefrac <- rssicounts$abovecurve / rssicounts$cnt # Larger is better (more above the curve)
+rssicounts$lowerarea <- rssicounts$rssiint < meanrssi
+head(rssicounts)
 
+rssicountssummary <- rssicounts %>%
+  dplyr::group_by(lowerarea) %>%
+  dplyr::slice(which.max(abovefrac))
+head(rssicountssummary)
+write.csv(rssicountssummary,paste(basedir , "/", phonedir,"-rssi-peaks.csv",sep=""))
+lowerpeak <- as.integer(rssicountssummary[2:2,"rssiint"]) # WARNING ASSUMES A SINGLE PEAK
+lowerpeak
+upperpeak <- as.integer(rssicountssummary[1:1,"rssiint"]) # WARNING ASSUMES A SINGLE PEAK
+upperpeak
+#print(paste("Lower peak RSSI:",lowerpeak,"Upper Peak RSSI:", upperpeak)," ")
 
 
 # PART B

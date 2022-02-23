@@ -21,11 +21,13 @@ library(lubridate) # working with time durations
 library(fitdistrplus) # gamma distribution fitting
 library(slider) # sliding time window
 library(scales) # date format in charts
+#library(tidyquant) # standardise time period
+#library(runner)
 
 # 1. Set the folder that contains a sub folder per phone in the test
 #basedir <- "D:\\git\\skunkworks\\test-data\\2021-12-28-roaming"
 #phonedir <- "Pixel3XL"
-basedir <- "D:\\git\\skunkworks\\test-data\\2022-01-09-partner-data"
+basedir <- "/home/adam/Documents/git/skunkworks/test-data"
 #phonedir <- "S10Lite"
 phonedir <- "A40"
 #basedir <- "d:\\git\\skunkworks/test-data/2021-11-16-garage"
@@ -105,10 +107,10 @@ initialDataPrepAndFilter <- function(dataFrame) {
   # Now extract RSSI and txPower (if present)
   # Example $data value: RSSI:-97.0[BLETransmitPower:8.0]
   rssiAndTxPowerPattern <- "RSSI:(-[0-9]+\\.0)(.BLETransmitPower:([0-9.]+).)?"
-  matches <- str_match(measures$data,rssiAndTxPowerPattern)
+  matches <- stringr::str_match(measures$data,rssiAndTxPowerPattern)
   #head(matches)
-  measures$rssi <- str_match(measures$data,rssiAndTxPowerPattern)[,2]
-  measures$txpower <- str_match(measures$data,rssiAndTxPowerPattern)[,4]
+  measures$rssi <- stringr::str_match(measures$data,rssiAndTxPowerPattern)[,2]
+  measures$txpower <- stringr::str_match(measures$data,rssiAndTxPowerPattern)[,4]
   #head(measures)
   
   # Filter out those without RSSI
@@ -1004,10 +1006,56 @@ printSummary(corrected,"02-txcorrected")
 chartAndFit(corrected,"02-txcorrected")
 chartProximity(corrected,"02-txcorrected")
 
+head(corrected)
+
+
+standardiseWindow <- function(dataFrame, stdWindowSeconds, windowSizeSeconds) {
+  res <- dataFrame %>%
+    dplyr::group_by(macuuid) %>%
+    dplyr::summarise( t=seq(from=min(t) + stdWindowSeconds,to=max(t) + stdWindowSeconds,by=paste(stdWindowSeconds,"secs",sep=" ")) ) %>%
+    dplyr::ungroup()
+  head(res)
+  
+  res <- res %>%
+    dplyr::group_by(macuuid,t) %>%
+    dplyr::mutate(
+      rssicorrected=mean(dataFrame$rssicor[
+        dataFrame$macuuid==macuuid &
+          dataFrame$t < t &
+          dataFrame$t >= (t - windowSizeSeconds)
+      ]),
+      txpowerint=head(c(tail(dataFrame$txpowerint[
+        dataFrame$macuuid==macuuid &
+          dataFrame$t < t &
+          dataFrame$t >= (t - windowSizeSeconds)
+      ],n=1), NA),n=1)
+    ) %>%
+    dplyr::ungroup()
+  res <- as.data.frame(res)
+  res <- dplyr::filter(res,!is.na(rssicorrected) & !is.na(txpowerint) & rssicorrected>=0)
+  res
+}
+
+
+
+
+stdWindow <- standardiseWindow(corrected, 5, 30)
 # WARNING: USE RSSICOR COLUMN BEYOND THIS POINT! (as chartAndFit uses)
 
+NROW(corrected)
+NROW(stdWindow)
+
+head(stdWindow)
+stdWindow$rssicor <- stdWindow$rssicorrected
+dplyr::filter(stdWindow, rssicor < 0)
+dplyr::filter(stdWindow, is.na(rssicor))
+printSummary(stdWindow,"02b-stdwindow")
+chartAndFit(stdWindow,"02b-stdwindow")
+chartProximity(stdWindow,"02b-stdwindow")
+
+
 # Ensure the contact event data in use has a good distribution across the whole range (reduces local noise)
-wideRange <- filterForCERange(corrected,10) # 187 events
+wideRange <- filterForCERange(stdWindow,10) # 187 events
 wideRangeSelected <- wideRange
 printSummary(wideRange,"03-cerangegt10")
 chartAndFit(wideRange,"03-cerangegt10")
@@ -1030,6 +1078,7 @@ chartProximity(wideRange,"03-cerangegt10")
 
 
 # Next try a running mean on rssicor using the last 10 values, then fitting
+# NOTE RUNNING MEAN IGNORED FOR NOW AS WERE DOING THIS IN STANDARDISE WINDOW
 runningMean <- wideRangeSelected
 runningMean <- runningMean %>%
   dplyr::group_by(macuuid) %>%
@@ -1239,10 +1288,13 @@ chartProximity(scoredOverTime,"06-simplerisk")
 #   3a. DONE Iterate on calibration routine until we can output our calibration formulae variable values
 #   4. WIP Apply risk formula across data
 #   4a. DONE Apply to those with txpower and calibration results first (easiest) - WORKING AND VALIDATED
-#   4b. All raw data with calibration algorithm applied (requires dynamic calculation and application of risk variables)
+#   4b. DONE Apply standardised time window at 5 seconds with 30 seconds of history to remove skew
+#   4c. Find maximum y value in buckets and scale to 250, find min and scale to 50, now fit and check distributions are the same
+#   4d. Separate statistics and charting steps, and produce calibration summary format
+#   4e. Externalise R functions for re-use and refactor
+#   4x. All raw data with calibration algorithm applied (requires dynamic calculation and application of risk variables)
 # - DONE Review RSSI to calibrated RSSI for TxPower
 # - DONE Apply running mean of each contact's RSSI as per current demo app to raw data before processing
-# - WIP Externalise R functions for re-use and refactor
 
 
 

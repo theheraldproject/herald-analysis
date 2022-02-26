@@ -27,9 +27,10 @@ library(scales) # date format in charts
 # 1. Set the folder that contains a sub folder per phone in the test
 #basedir <- "D:\\git\\skunkworks\\test-data\\2021-12-28-roaming"
 #phonedir <- "Pixel3XL"
-basedir <- "/home/adam/Documents/git/skunkworks/test-data"
-#phonedir <- "S10Lite"
-phonedir <- "A40"
+#basedir <- "/home/adam/Documents/git/skunkworks/test-data"
+basedir <- "D:\\git\\skunkworks\\test-data\\2022-01-09-partner-data"
+phonedir <- "S10Lite"
+#phonedir <- "A40"
 #basedir <- "d:\\git\\skunkworks/test-data/2021-11-16-garage"
 #phonedir <- "A-S10lite"
 #basedir <- "./sample-output/2020-08-11-cx-47"
@@ -56,8 +57,12 @@ filtertimemax <- as.POSIXct(paste("2021-12-16", "00:09:30"), format="%Y-%m-%d %H
 # Runtime settings
 heraldCsvDateFormat <- "%Y-%m-%d %H:%M:%S" # PRE v2.1.0-beta3 - integer seconds
 #heraldCsvDateFormat <- "%Y-%m-%d %H:%M:%OS3%z" # v2.1.0-beta3 onwards - 3 decimal places of seconds with timezone as E.g. -0800
-rssiCharts <- FALSE # Output RSSI chart images
-dotxpower <- FALSE # Provide TXPower analyses
+#rssiCharts <- FALSE # Output RSSI chart images
+#dotxpower <- FALSE # Provide TXPower analyses
+
+
+generateCharts <- FALSE # Only enable when we need to (prevents regenerate every chart all the time)
+
 ignoreHeraldDevices <- TRUE
 
 chartWidth <- 400
@@ -150,6 +155,8 @@ calcCEStats <- function(dataFrame) {
 }
 
 chartCEStats <- function(dataFrameCE, groupText) {
+  if (generateCharts) {
+    
   p <- ggplot(dataFrameCE, aes(x=meanrssi,color=1, fill=1)) +
     geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
     labs(x="Mean RSSI",
@@ -244,11 +251,13 @@ chartCEStats <- function(dataFrameCE, groupText) {
   #p
   ggsave(paste(basedir,"/",phonedir,"-ce-",groupText,"-maxvsminrssi.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
   
-  
+  }
 }
 
 
 chartCEDuration <- function(dataFrameCE, groupText, durationLimitMins) {
+  if (generateCharts) {
+    
   cestatslim <- dataFrameCE
   cestatslim$durmin[cestatslim$durmin > durationLimitMins] <- durationLimitMins
   p <- ggplot(cestatslim, aes(x=durmin,color=1, fill=1)) +
@@ -259,9 +268,13 @@ chartCEDuration <- function(dataFrameCE, groupText, durationLimitMins) {
          subtitle=paste("Across all interactions (max of ",durationLimitMins," minutes)",sep=""))
   #p
   ggsave(paste(basedir,"/",phonedir,"-ce-",groupText,"-duration.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  
+  }
 }
 
 chartCEReadingsCount <- function(dataFrameCE, groupText, readingCountLimit) {
+  if (generateCharts) {
+    
   # Also show a chart of number of readings for each contact event, in the tens of readings
   cestatscntlim <- dataFrameCE
   cestatscntlim$n[cestatscntlim$n > readingCountLimit] <- readingCountLimit
@@ -273,6 +286,8 @@ chartCEReadingsCount <- function(dataFrameCE, groupText, readingCountLimit) {
          subtitle=paste("Across ",groupText," interactions (limited to n=",readingCountLimit,")",sep=""))
   #p
   ggsave(paste(basedir,"/",phonedir,"-ce-",groupText,"-readingcount.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  
+  }
 }
 
 
@@ -340,6 +355,8 @@ chartProximity <- function(dataFrame, groupText) {
   
   print(paste("chartProximity for ",groupText,sep=""))
   print(" - Charting prox values")
+  if (generateCharts) {
+    
   # Graph 1a&b - Show RSSI frequencies by macuuid across whole time period
   # Note: As devices rotate mac address, some devices will be the same but 
   #       appear as different mac addresses
@@ -352,8 +369,13 @@ chartProximity <- function(dataFrame, groupText) {
     theme(legend.position = "bottom")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-values.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   print(" - Charting prox density")
+  if (generateCharts) {
+    
   p <- ggplot(dataFrame, aes(x=rssicor, y=..density..  , color=macuuid, fill=macuuid)) +
     geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
     geom_density(alpha=0.3, fill=NA, show.legend = F) +
@@ -364,11 +386,16 @@ chartProximity <- function(dataFrame, groupText) {
     theme(legend.position = "bottom")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-density.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   
   
   # Graph 2 - Smoothed line of rssi over time (3 degrees of freedom)
   print(" - Charting prox over time")
+  if (generateCharts) {
+    
   p <- ggplot(dataFrame, aes(x=t,y=rssicor,color=macuuid)) +
     geom_point(show.legend = F) +
     labs(x="Time",
@@ -381,6 +408,9 @@ chartProximity <- function(dataFrame, groupText) {
   #  geom_smooth(method="loess")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-over-time.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   
   
@@ -423,6 +453,8 @@ chartProximity <- function(dataFrame, groupText) {
   
   
   print(" - Charting top50 ce by data quantity")
+  if (generateCharts) {
+    
   p <- ggplot(measuresinrangewithmostdata, aes(x=t,y=rssicor,color=macuuid)) +
     geom_point(show.legend = F) +
     labs(x="Time",
@@ -435,8 +467,13 @@ chartProximity <- function(dataFrame, groupText) {
     theme(legend.position = "none")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-over-time-top50.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   print(" - Charting top20 ce by duration")
+  if (generateCharts) {
+    
   p <- ggplot(measuresinrangewithlongestduration, aes(x=t,y=rssicor,color=macuuid)) +
     geom_point(show.legend = F) +
     labs(x="Time",
@@ -449,10 +486,15 @@ chartProximity <- function(dataFrame, groupText) {
     theme(legend.position = "none")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-over-time-longest20.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   # Density of ones with most data, above
   
   print(" - Charting density of top50 ce by duration")
+  if (generateCharts) {
+    
   p <- ggplot(measuresinrangewithmostdata, aes(x=rssicor, y=..density..  , color=macuuid, fill=macuuid)) +
     geom_histogram(alpha=0.5, binwidth=1, show.legend=F) +
     geom_density(alpha=0.3, fill=NA, show.legend = F) +
@@ -464,6 +506,9 @@ chartProximity <- function(dataFrame, groupText) {
     theme(legend.position = "bottom")
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-proximity-density-top50.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   
   
@@ -753,18 +798,7 @@ filterForCERange <- function(dataFrame, minRange) {
 
 
 
-
-chartAndFit <- function(dataFrame, groupText) {
-  print(paste("chartAndFit - ",groupText,sep=""))
-  
-  #meanrssitx <- mean(dataFrame$rssiint)
-  #sdrssitx <- sd(dataFrame$rssiint)
-  #countrssitx <- NROW(dataFrame)
-  #minrssitx <- min(dataFrame$rssiint)
-  #maxrssitx <- max(dataFrame$rssiint)
-  #skewrssitx <- moments::skewness(dataFrame$rssiint, na.rm = TRUE)
-  #kurtosisrssitx <- moments::kurtosis(dataFrame$rssiint, na.rm = TRUE)
-  
+calculateCentralAndUpperPeak <- function(dataFrame) {
   
   
   meanrssitxcor <- mean(dataFrame$rssicor)
@@ -775,48 +809,18 @@ chartAndFit <- function(dataFrame, groupText) {
   skewrssitxcor <- moments::skewness(dataFrame$rssicor, na.rm = TRUE)
   kurtosisrssitxcor <- moments::kurtosis(dataFrame$rssicor, na.rm = TRUE)
   
-  
-  
-  
-  
-  
-  # NOW CREATE NORMALISED (scaled) DATASET
-  # Now alter rssi values to the idealised normal distribution
-  # NOTE: Not actually to a N(0,1) as yet - not got the scale factors right...
-  # Calculate fitness
-  scaledtxcor <- dataFrame
-  # Filter beyond the two peaks
-  #scaledtxcor <- dplyr::filter(scaledtxcor, rssicor >= lowerpeaktxcor & rssicor <= upperpeaktxcor)
-  #scaledtxcor$rssicorrected <- 0
-  #scaledtxcor$rssicorrected[scaledtxcor$rssicor < meanrssitxcor] <- (scaledtxcor$rssicor[scaledtxcor$rssicor < meanrssitxcor] - meanrssitxcor) / abs(lowersdpostxcor)
-  #scaledtxcor$rssicorrected[scaledtxcor$rssicor > meanrssitxcor] <- (scaledtxcor$rssicor[scaledtxcor$rssicor > meanrssitxcor] - meanrssitxcor) / abs(uppersdpostxcor)
-  head(scaledtxcor)
-  meancortxcor <- mean(scaledtxcor$rssicor)
-  sdcortxcor <- sd(scaledtxcor$rssicor)
-  skewcortxcor <- moments::skewness(scaledtxcor$rssicor, na.rm = TRUE)
-  kurtosiscortxcor <- moments::kurtosis(scaledtxcor$rssicor, na.rm = TRUE)
-  
-  
-  print(" - Calculating scaled fit")
-  
-  myfit <- fitdist(scaledtxcor$rssicor, distr = "gamma", method = "mle")
-  summary(myfit)
-  gammashape <- myfit$estimate[1] # shape
-  gammarate <- myfit$estimate[2] # rate
-  
-  myfitnorm <- fitdist(scaledtxcor$rssicor, distr = "norm", method = "mle")
-  summary(myfitnorm)
-  
-  myfitnorm$sd[2]
-  
+  weakmintxcor <- min(meanrssitxcor + (3 * sdrssitxcor), max(dataFrame$rssicor))# -98 is the boundary value for bluetooth chips to receive data, so ignore
+  weakmaxtxcor <- (meanrssitxcor + (2 * sdrssitxcor))
+  strongmintxcor <- (meanrssitxcor - (2 * sdrssitxcor))
+  strongmaxtxcor <- max(meanrssitxcor - (4 * sdrssitxcor), 0)
   
   
   # Filter those so we're left with those between 2 and 3 SD only
   dataExtremeties <- dataFrame %>%
     dplyr::filter(
-      (rssicor >= (meanrssitxcor - (3 * sdrssitxcor)) & rssicor < (meanrssitxcor - (2 * sdrssitxcor)) )
+      (rssicor >= strongmaxtxcor & rssicor < strongmintxcor)
       |
-        (rssicor <= (meanrssitxcor + (3 * sdrssitxcor)) & rssicor > (meanrssitxcor + (2 * sdrssitxcor)) )
+      (rssicor <= weakmintxcor & rssicor > weakmaxtxcor )
     )
   
   
@@ -860,6 +864,17 @@ chartAndFit <- function(dataFrame, groupText) {
   lowersdpostxcor
   uppersdpostxcor
   
+  # Find the central (largest y value) peak
+  peakData <- dataFrame
+  peakData$rssicorGroup <- round(peakData$rssicor)
+  peakGroups <- peakData %>%
+    dplyr::group_by(rssicorGroup) %>%
+    dplyr::summarise(n=dplyr::n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(dplyr::desc(n)) #,dplyr::desc(rssicorGroup))
+  centralPeakValue <- peakGroups$rssicorGroup[1]
+  centralPeakCount <- peakGroups$n[1]
+  print(paste(" - Central value is ",centralPeakValue," with count of ",centralPeakCount,sep=""))
   
   # if lower (farthest) point missing, use +3 * SD
   # if upper (nearest) point missing, use -3 * SD
@@ -870,35 +885,115 @@ chartAndFit <- function(dataFrame, groupText) {
   #  uppersdpostxcor <- meanrssitxcor - (3 * sdrssitxcor)
   #}
   
+  c(
+    farPeakValue = lowersdpostxcor, # 'Farther'
+    nearPeakValue = uppersdpostxcor, # 'Nearer'
+    centralPeakValue = centralPeakValue,
+    centralPeakCount = centralPeakCount,
+    meanValue <- mean(dataFrame$rssicor),
+    sdValue <- sd(dataFrame$rssicor),
+    countValues <- NROW(dataFrame),
+    minValue <- min(dataFrame$rssicor),
+    maxValue <- max(dataFrame$rssicor),
+    nearAreaMin <- strongmaxtxcor,
+    nearAreaMax <- strongmintxcor,
+    farAreaMin <- weakmaxtxcor, # original variables were flipped, hence the confusing names within this function
+    farAreaMax <- weakmintxcor
+  )
+}
+
+
+chartAndFit <- function(dataFrame, groupText, fitData) {
+  print(paste("chartAndFit - ",groupText,sep=""))
+  
+  #meanrssitx <- mean(dataFrame$rssiint)
+  #sdrssitx <- sd(dataFrame$rssiint)
+  #countrssitx <- NROW(dataFrame)
+  #minrssitx <- min(dataFrame$rssiint)
+  #maxrssitx <- max(dataFrame$rssiint)
+  #skewrssitx <- moments::skewness(dataFrame$rssiint, na.rm = TRUE)
+  #kurtosisrssitx <- moments::kurtosis(dataFrame$rssiint, na.rm = TRUE)
+  
+  
+  
+  #meanrssitxcor <- mean(dataFrame$rssicor)
+  #sdrssitxcor <- sd(dataFrame$rssicor)
+  #countrssitxcor <- NROW(dataFrame)
+  #minrssitxcor <- min(dataFrame$rssicor)
+  #maxrssitxcor <- max(dataFrame$rssicor)
+  skewrssitxcor <- moments::skewness(dataFrame$rssicor, na.rm = TRUE)
+  kurtosisrssitxcor <- moments::kurtosis(dataFrame$rssicor, na.rm = TRUE)
+  
+  
+  
+  
+  
+  
+#  # NOW CREATE NORMALISED (scaled) DATASET
+#  # Now alter rssi values to the idealised normal distribution
+#  # NOTE: Not actually to a N(0,1) as yet - not got the scale factors right...
+#  # Calculate fitness
+#  scaledtxcor <- dataFrame
+#  # Filter beyond the two peaks
+#  #scaledtxcor <- dplyr::filter(scaledtxcor, rssicor >= lowerpeaktxcor & rssicor <= upperpeaktxcor)
+#  #scaledtxcor$rssicorrected <- 0
+#  #scaledtxcor$rssicorrected[scaledtxcor$rssicor < meanrssitxcor] <- (scaledtxcor$rssicor[scaledtxcor$rssicor < meanrssitxcor] - meanrssitxcor) / abs(lowersdpostxcor)
+#  #scaledtxcor$rssicorrected[scaledtxcor$rssicor > meanrssitxcor] <- (scaledtxcor$rssicor[scaledtxcor$rssicor > meanrssitxcor] - meanrssitxcor) / abs(uppersdpostxcor)
+#  head(scaledtxcor)
+#  meancortxcor <- mean(scaledtxcor$rssicor)
+#  sdcortxcor <- sd(scaledtxcor$rssicor)
+#  skewcortxcor <- moments::skewness(scaledtxcor$rssicor, na.rm = TRUE)
+#  kurtosiscortxcor <- moments::kurtosis(scaledtxcor$rssicor, na.rm = TRUE)
+  
+  
+  print(" - Calculating scaled fit")
+  
+  myfit <- fitdist(dataFrame$rssicor, distr = "gamma", method = "mle")
+  summary(myfit)
+  gammashape <- myfit$estimate[1] # shape
+  gammarate <- myfit$estimate[2] # rate
+  
+  myfitnorm <- fitdist(dataFrame$rssicor, distr = "norm", method = "mle")
+  summary(myfitnorm)
+  
+  myfitnorm$sd[2]
+  
+  
   
   
   
   
   # Now plot the same but after txpower correction of rssi
-  print(paste(" - Stats: mean=",meanrssitxcor," sd=",sdrssitxcor," n=",countrssitxcor, sep=""))
-  p <- ggplot(dataFrame, aes(x=rssicor,color=1, fill=1)) +
-    geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=maxrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=minrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=lowersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
-    geom_vline(data=dataFrame, aes(xintercept=uppersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
-    geom_text(aes(x=lowersdpostxcor, label=paste("Lower peak = ",lowersdpostxcor,sep=""), y=0.04), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
-    geom_text(aes(x=uppersdpostxcor, label=paste("Upper peak = ",uppersdpostxcor,sep=""), y=0.04), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
-    geom_text(aes(x=meanrssitxcor, label=paste("N = ",countrssitxcor,"\nMean = ",meanrssitxcor,"\nSD = ",sdrssitxcor,"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.04), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
-    labs(x="RSSI corrected for TxPower",
-         y="Relative Frequency",
-         title="Corrected RSSI Frequency",
-         subtitle="Across all interactions") + 
-    stat_function(fun = dnorm, args = list(mean = meanrssitxcor, sd = sdrssitxcor), show.legend = F)
-  p
-  ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-01-input-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  print(paste(" - Stats: mean=",dataFit$meanValue[1]," sd=",dataFit$sdValue[1]," n=",dataFit$countValues[1], sep=""))
+#  if (generateCharts) {
+#  p <- ggplot(dataFrame, aes(x=rssicor,color=1, fill=1)) +
+#    geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=maxrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=minrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor + 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=meanrssitxcor - 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=lowersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=uppersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+#    geom_vline(data=dataFrame, aes(xintercept=centralPeakValue), color="blue", linetype="dashed", size=1, show.legend = F) +
+#    geom_text(aes(x=lowersdpostxcor, label=paste("Lower peak = ",lowersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+#    geom_text(aes(x=uppersdpostxcor, label=paste("Upper peak = ",uppersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+#    geom_text(aes(x=centralPeakValue, label=paste("Central peak = ",centralPeakValue,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+#    geom_text(aes(x=meanrssitxcor, label=paste("N = ",countrssitxcor,"\nMean = ",meanrssitxcor,"\nSD = ",sdrssitxcor,"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+#    labs(x="RSSI corrected for TxPower",
+#         y="Relative Frequency",
+#         title="Corrected RSSI Frequency",
+#         subtitle="Across all interactions") + 
+#    stat_function(fun = dnorm, args = list(mean = meanrssitxcor, sd = sdrssitxcor), show.legend = F)
+#  p
+#  ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-01-input-distribution.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+#  } else {
+#    print("   - Skipped");
+#  }
   
   
   
@@ -907,22 +1002,29 @@ chartAndFit <- function(dataFrame, groupText) {
   
   # A2 Try to normalise these values - by using the mean and local maxima peaks based on human behaviour
   # - First, Filter for only those rssiint between -3 (or -97) and -1 SD and 1 and 3 SD (or minrssi if smaller)
-  weakmintxcor <- max(meanrssitxcor - (3 * sdrssitxcor), -120)# -98 is the boundary value for bluetooth chips to receive data, so ignore
-  weakmaxtxcor <- meanrssitxcor - (2 * sdrssitxcor)
-  strongmintxcor <- meanrssitxcor + (2 * sdrssitxcor)
-  strongmaxtxcor <- min(meanrssitxcor + (3 * sdrssitxcor), maxrssitxcor, 0)
-  sdmeasurestxcor <- dplyr::filter(dataFrame, (rssicor > weakmintxcor & rssicor <= weakmaxtxcor) | (rssicor >= strongmintxcor & rssicor <= strongmaxtxcor))
+  #weakmintxcor <- max(meanrssitxcor - (3 * sdrssitxcor), -120)# -98 is the boundary value for bluetooth chips to receive data, so ignore
+  #weakmaxtxcor <- meanrssitxcor - (2 * sdrssitxcor)
+  #strongmintxcor <- meanrssitxcor + (2 * sdrssitxcor)
+  #strongmaxtxcor <- min(meanrssitxcor + (4 * sdrssitxcor), maxrssitxcor, 0)
+  sdmeasurestxcor <- dplyr::filter(dataFrame, 
+                    (rssicor > dataFit$farAreaMin[1] & rssicor <= dataFit$farAreaMax[1]) | 
+                    (rssicor >= dataFit$nearAreaMin[1] & rssicor <= dataFit$nearAreaMax[1])
+  )
   # Chart these as a debug step
   
+  if (generateCharts) {
   p <- ggplot(sdmeasurestxcor, aes(x=rssicor)) +
     geom_histogram(alpha=0.5, binwidth=1, show.legend=F, aes( y=..density.. )) +
-    labs(x="RSSI In Range",
-         y="Number of values",
-         title="RSSIs in range of local maxima")  + 
+    labs(x="Proximity values",
+         y="Count",
+         title="Proximity Values in range of local maxima")  + 
     theme(legend.position = "bottom") + 
-    stat_function(fun = dnorm, args = list(mean = meanrssitxcor, sd = sdrssitxcor), show.legend = F)
+    stat_function(fun = dnorm, args = list(mean = dataFit$meanValue[1], sd = dataFit$sdValue[1]), show.legend = F)
   p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-02-maxima-areas.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   
   
@@ -941,39 +1043,43 @@ chartAndFit <- function(dataFrame, groupText) {
   
   # Now chart it
   
-  xlimmin <- maxrssitxcor
+  xlimmin <- dataFit$maxValue[1]
   if (xlimmin < 255) {
     xlimmin <- 255
   }
-  xlimmax <- minrssitxcor
+  xlimmax <- dataFit$minValue[1]
   if (xlimmax > 0) {
     xlimmax <- 0
   }
   
   print(" - Charting scaled fit")
+  if (generateCharts) {
   # Now reversed and fitted to gamma and normal(gaussian) distributions
-  p <- ggplot(scaledtxcor, aes(x=rssicor,color=1, fill=1)) +
+  p <- ggplot(dataFrame, aes(x=rssicor,color=1, fill=1)) +
     geom_histogram(alpha=0.5, binwidth=10, show.legend = F, aes( y=..density.. )) +
-    geom_text(aes(x=meanrssitxcor - 2*sdrssitxcor, label=paste(
+    geom_text(aes(x=dataFit$meanValue[1] - 2*dataFit$sdValue[1], label=paste(
       "Gamma:-\nShape = ",myfit$estimate[1]," (SE = ",myfit$sd[1],")\nRate = ",myfit$estimate[2]," (SE = ",myfit$sd[2],")",
       "\nNorm:-\nMean = ",myfitnorm$estimate[1]," (SE = ",myfitnorm$sd[1],")\nSD = ",myfitnorm$estimate[2]," (SE = ",myfitnorm$sd[2],")",
       sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=maxrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=minrssitxcor), color="black", linetype="solid", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor + sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor - sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor + 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor - 2*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor + 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=meanrssitxcor - 3*sdrssitxcor), color="grey", linetype="dashed", size=0.5, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=lowersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
-    geom_vline(data=scaledtxcor, aes(xintercept=uppersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$maxValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$minValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + 2*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - 2*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + 3*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - 3*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=lowersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=uppersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=centralPeakValue), color="blue", linetype="dashed", size=1, show.legend = F) +
     geom_text(aes(x=maxrssitxcor, label=paste("Max = ",maxrssitxcor,sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
     geom_text(aes(x=minrssitxcor, label=paste("Min = ",minrssitxcor,sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
     geom_text(aes(x=lowersdpostxcor, label=paste("Lower peak = ",lowersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
     geom_text(aes(x=uppersdpostxcor, label=paste("Upper peak = ",uppersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
-    geom_text(aes(x=meanrssitxcor + 2*sdrssitxcor, label=paste("N = ",countrssitxcor,"\nMean = ",meanrssitxcor,"\nSD = ",sdrssitxcor,"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=centralPeakValue, label=paste("Central peak = ",centralPeakValue,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=dataFit$meanValue[1] + 2*dataFit$sdValue[1], label=paste("N = ",dataFit$countValues[1],"\nMean = ",dataFit$meanValue[1],"\nSD = ",
+      dataFit$sdValue[1],"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
     labs(x="Calibrated proximity",
          y="Relative Frequency",
          title="Proximity Frequency fitting",
@@ -984,10 +1090,46 @@ chartAndFit <- function(dataFrame, groupText) {
   #p
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-03-complete.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
   
-  # TODO change these charts so that calculating fit values, printing those on a pre-fit chart, applying the scale criteria, and charting post-scaled data are separate tasks
-  
+  # Now with binwidth=1
+  # Now reversed and fitted to gamma and normal(gaussian) distributions
+  p <- ggplot(scaledtxcor, aes(x=rssicor,color=1, fill=1)) +
+    geom_histogram(alpha=0.5, binwidth=1, show.legend = F, aes( y=..density.. )) +
+    geom_text(aes(x=dataFit$meanValue[1] - 2*dataFit$sdValue[1], label=paste(
+      "Gamma:-\nShape = ",myfit$estimate[1]," (SE = ",myfit$sd[1],")\nRate = ",myfit$estimate[2]," (SE = ",myfit$sd[2],")",
+      "\nNorm:-\nMean = ",myfitnorm$estimate[1]," (SE = ",myfitnorm$sd[1],")\nSD = ",myfitnorm$estimate[2]," (SE = ",myfitnorm$sd[2],")",
+      sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$maxValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$minValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + 2*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - 2*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] + 3*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=dataFit$meanValue[1] - 3*dataFit$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=lowersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=uppersdpostxcor), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_vline(data=dataFrame, aes(xintercept=centralPeakValue), color="blue", linetype="dashed", size=1, show.legend = F) +
+    geom_text(aes(x=maxrssitxcor, label=paste("Max = ",maxrssitxcor,sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=minrssitxcor, label=paste("Min = ",minrssitxcor,sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=lowersdpostxcor, label=paste("Lower peak = ",lowersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=uppersdpostxcor, label=paste("Upper peak = ",uppersdpostxcor,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=centralPeakValue, label=paste("Central peak = ",centralPeakValue,sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+    geom_text(aes(x=dataFit$meanValue[1] + 2*dataFit$sdValue[1], label=paste("N = ",dataFit$countValues[1],"\nMean = ",dataFit$meanValue[1],"\nSD = ",
+      dataFit$sdValue[1],"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+    labs(x="Calibrated proximity",
+         y="Relative Frequency",
+         title="Proximity Frequency fitting",
+         subtitle=paste("Across ",groupText," interactions",sep="")) + 
+    stat_function(fun = dgamma, args = list(shape = myfit$estimate[1], rate = myfit$estimate[2]), show.legend = F, colour="orange") +
+    stat_function(fun = dnorm, args = list(mean = myfitnorm$estimate[1], sd = myfitnorm$estimate[2]), show.legend = F) +
+    xlim(xlimmax,xlimmin) + ylim(0,0.025)
+  #p
+  ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-03-complete-thin.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   print(" - Done")
-  # TODO output scaled data frame
 }
 
 
@@ -997,13 +1139,15 @@ chartAndFit <- function(dataFrame, groupText) {
 # Chart and match the raw data now
 revOnly <- referenceTxAndReverse(measures) # TODO DOUBLE CHECK THIS IS DEFO RAW DATA WITHOUT TX CORRECTION
 printSummary(revOnly,"01-reversed")
-chartAndFit(revOnly,"01-reversed")
+fitData <- calculateCentralAndUpperPeak(revOnly)
+chartAndFit(revOnly,"01-reversed",fitData)
 chartProximity(revOnly,"01-reversed")
 
 # Now try the fit to the 'raw' TxPower corrected data
 corrected <- txAndReverse(measures) # 214 events
 printSummary(corrected,"02-txcorrected")
-chartAndFit(corrected,"02-txcorrected")
+fitData <- calculateCentralAndUpperPeak(corrected)
+chartAndFit(corrected,"02-txcorrected", fitData)
 chartProximity(corrected,"02-txcorrected")
 
 head(corrected)
@@ -1045,12 +1189,15 @@ stdWindow <- standardiseWindow(corrected, 5, 30)
 NROW(corrected)
 NROW(stdWindow)
 
+generateCharts <- TRUE
+
 head(stdWindow)
 stdWindow$rssicor <- stdWindow$rssicorrected
 dplyr::filter(stdWindow, rssicor < 0)
 dplyr::filter(stdWindow, is.na(rssicor))
 printSummary(stdWindow,"02b-stdwindow")
-chartAndFit(stdWindow,"02b-stdwindow")
+fitData <- calculateCentralAndUpperPeak(stdWindow)
+chartAndFit(stdWindow,"02b-stdwindow",fitData)
 chartProximity(stdWindow,"02b-stdwindow")
 
 
@@ -1058,7 +1205,8 @@ chartProximity(stdWindow,"02b-stdwindow")
 wideRange <- filterForCERange(stdWindow,10) # 187 events
 wideRangeSelected <- wideRange
 printSummary(wideRange,"03-cerangegt10")
-chartAndFit(wideRange,"03-cerangegt10")
+fitData <- calculateCentralAndUpperPeak(wideRange)
+chartAndFit(wideRange,"03-cerangegt10",fitData)
 chartProximity(wideRange,"03-cerangegt10")
 
 #wideRange <- filterForCERange(wideRange,25) # 115 events
@@ -1079,56 +1227,56 @@ chartProximity(wideRange,"03-cerangegt10")
 
 # Next try a running mean on rssicor using the last 10 values, then fitting
 # NOTE RUNNING MEAN IGNORED FOR NOW AS WERE DOING THIS IN STANDARDISE WINDOW
-runningMean <- wideRangeSelected
-runningMean <- runningMean %>%
-  dplyr::group_by(macuuid) %>%
-  dplyr::mutate(rollrssicor = lag(zoo::rollapplyr(rssicor, 10, mean, partial = TRUE), k = 10)) %>%
-  dplyr::ungroup()
-head(runningMean, n=20)
-runningMean$rssicor <- runningMean$rollrssicor
-printSummary(runningMean,"04-runningmean")
-chartAndFit(runningMean,"04-runningmean")
-chartProximity(runningMean,"04-runningmean")
+#runningMean <- wideRangeSelected
+#runningMean <- runningMean %>%
+#  dplyr::group_by(macuuid) %>%
+#  dplyr::mutate(rollrssicor = lag(zoo::rollapplyr(rssicor, 10, mean, partial = TRUE), k = 10)) %>%
+#  dplyr::ungroup()
+#head(runningMean, n=20)
+#runningMean$rssicor <- runningMean$rollrssicor
+#printSummary(runningMean,"04-runningmean")
+#chartAndFit(runningMean,"04-runningmean")
+#chartProximity(runningMean,"04-runningmean")
 
 
 # Now try last 30 seconds worth of data rather than fixed values
 # - As per https://github.com/theheraldproject/herald-analysis/tree/develop/reference-data/rssi-raw-edison#solution
 
-computeSummary <- function(dataFrame) {
-  last <- tail(dataFrame, n=1)
-  last$rssicorrected <- mean(dataFrame$rssicor)
-#      dplyr::summarise(dataFrame, 
-#                          t=t,rssiint=rssiint,txpower=txpower,txpowerint=txpowerint,rssicor=rssicor,
-#                   rssicorrected = mean(rssicor))
-#    ,n=1)
-  last
-}
-head(wideRangeSelected)
-timeWindow <- wideRangeSelected
+#computeSummary <- function(dataFrame) {
+#  last <- tail(dataFrame, n=1)
+#  last$rssicorrected <- mean(dataFrame$rssicor)
+##      dplyr::summarise(dataFrame, 
+##                          t=t,rssiint=rssiint,txpower=txpower,txpowerint=txpowerint,rssicor=rssicor,
+##                   rssicorrected = mean(rssicor))
+##    ,n=1)
+#  last
+#}
+#head(wideRangeSelected)
+#timeWindow <- wideRangeSelected
 
-applySlider = function(dataFrame, ...) {
-  #print(NROW(dataFrame))
-  res <- slider::slide_period_dfr(dataFrame, dataFrame$t, "second", computeSummary, .before=29, .complete=FALSE) # Drops first 29s of data
-  #print(NROW(res))
-  res
-}
+#applySlider = function(dataFrame, ...) {
+#  #print(NROW(dataFrame))
+#  res <- slider::slide_period_dfr(dataFrame, dataFrame$t, "second", computeSummary, .before=29, .complete=FALSE) # Drops first 29s of data
+#  #print(NROW(res))
+#  res
+#}
 #timeWindow <- slide_dbl(timeWindow, Var="rssicor", TimeVar="t", GroupVar="macuuid", NewVar="rssicorrected", SlideBy=30)
-timeWindowR <- timeWindow %>%
-  dplyr::group_by(macuuid) %>%
-  dplyr::group_modify(applySlider) %>%
-  dplyr::ungroup()
-timeWindowR <- as.data.frame(timeWindowR)
-head(timeWindowR, n=200)
-NROW(timeWindow)
-NROW(timeWindowR)
-head(timeWindowR)
-head(timeWindow)
-timeWindowR$rssicor <- timeWindowR$rssicorrected
+#timeWindowR <- timeWindow %>%
+#  dplyr::group_by(macuuid) %>%
+#  dplyr::group_modify(applySlider) %>%
+#  dplyr::ungroup()
+#timeWindowR <- as.data.frame(timeWindowR)
+#head(timeWindowR, n=200)
+#NROW(timeWindow)
+#NROW(timeWindowR)
+#head(timeWindowR)
+#head(timeWindow)
+#timeWindowR$rssicor <- timeWindowR$rssicorrected
 
 
 
 # Now perform 30 seconds scaling instead
-selectedForScaling <- timeWindowR
+#selectedForScaling <- timeWindowR
 
 
 # ERROR - WE'RE NOT SCALING RSSI BY TIME FOR THE CALIBRATION - JUST TOTAL QUANTITY SEEN!!! THIS WILL SKEW IT FOR REGULAR ADVERTISERS
@@ -1144,36 +1292,78 @@ selectedForScaling <- timeWindowR
 # - Limit any above 255 to 255, and below 0 to 0 (giving 0 to 255 - an 8 bit unsigned int)
 # - Note: May want to log10/loge values first, to represent long tail transmission drop off
 
-# Note: Below taken from non-scaled chart. Will calculate this on the fly in future
-# S10Lite
-#central <- 67
-#upperpeakvalue <- 29
-# A40
-central <- 72
-upperpeakvalue <- 38
 
-minPeakRisk <- 20
-centralRisk <- 191
-scaleFactor <- (centralRisk - minPeakRisk) / (central - upperpeakvalue)
 
-scaledData <- selectedForScaling
+
+# NO LONGER USING SEPARATE SLIDING WINDOW FUNCTIONS
+scaledData <- wideRangeSelected
 head(scaledData)
 
-scaledData$rssicor <- scaledData$rssicor - upperpeakvalue
-scaledData$rssicor <- scaledData$rssicor * scaleFactor
-scaledData$rssicor <- scaledData$rssicor + minPeakRisk
-min(scaledData$rssicor)
-max(scaledData$rssicor)
+# Note: Below taken from non-scaled chart. Will calculate this on the fly in future
+# S10Lite
+#central <- 82 # or 67 depending on which source data you calibrate from
+#upperpeakvalue <- 29
+# A40
+#central <- 83
+#upperpeakvalue <- 38
 
-# DROP data below and above limits for the purposes of fitting (it skews the fit)
-scaledData <- scaledData %>%
-  dplyr::filter(rssicor > 0 ) # & rssicor <= 255
-min(scaledData$rssicor)
-max(scaledData$rssicor)
+
+fitData <- calculateCentralAndUpperPeak(scaledData)
+
+calculateScale <- function(fitData, minPeakTargetValue, centralPeakTargetValue) {
+  central <- fitData$centralPeakValue[1]
+  upperpeakvalue <- fitData$nearPeakValue[1]
+  
+  minPeakRisk <- minPeakTargetValue
+  centralRisk <- centralPeakTargetValue
+  scaleFactor <- (centralRisk - minPeakRisk) / (central - upperpeakvalue)
+  
+  c(
+    scaleFactor=scaleFactor,
+    srcIndexValue=upperpeakvalue,
+    srcCentralValue=central,
+    targetIndexValue=minPeakRisk,
+    srcCentralValue=centralRisk
+  )
+}
+
+applyScale <- function(dataFrame, scaleFactorData, applyZeroLimit = TRUE) {
+  scaledData <- dataFrame
+  
+  scaledData$rssicor <- scaledData$rssicor - scaleFactorData$srcIndexValue[1]
+  scaledData$rssicor <- scaledData$rssicor * scaleFactorData$scaleFactor[1]
+  scaledData$rssicor <- scaledData$rssicor + scaleFactorData$targetIndexValue[1]
+  min(scaledData$rssicor)
+  max(scaledData$rssicor)
+  
+  # DROP data below and above limits for the purposes of fitting (it skews the fit)
+  if (applyZeroLimit) {
+  scaledData <- scaledData %>%
+    dplyr::filter(rssicor > 0 ) # & rssicor <= 255
+  }
+  min(scaledData$rssicor)
+  max(scaledData$rssicor)
+  scaledData
+}
+
+saveFitData <- function(fitData,groupText) {
+  print(paste(" - Saving fitData for ",groupText,sep=""))
+  write.csv(fitData,paste(basedir , "/", phonedir,"-",groupText,"-fitdata.csv",sep=""), row.names = FALSE, quote=FALSE, na = "")
+}
+
+saveScaleFactorData <- function(scaleFactorData,groupText) {
+  print(paste(" - Saving scaleFactorData for ",groupText,sep=""))
+  write.csv(scaleFactorData,paste(basedir , "/", phonedir,"-",groupText,"-scalefactordata.csv",sep=""), row.names = FALSE, quote=FALSE, na = "")
+}
+
+saveFitData(fitData,"05-scaled")
+scaleFactorData <- calculateScale(fitData,20,200)
+saveScaleFactorData(scaleFactorData,"05-scaled")
+scaledData <- applyScale(scaledData,scaleFactorData)
 printSummary(scaledData,"05-scaled")
 chartAndFit(scaledData,"05-scaled")
 
-head(scaledData,n=200)
+#head(scaledData,n=200)
 
 # RISK SCORING
 # - Generate risk score function (over corrected data for now) and print out risk incurred per hour, and sanity check it
@@ -1237,6 +1427,7 @@ chartRiskOverTime <- function(dataFrame, groupText) {
     dplyr::summarise(risk=sum(risk))
   
   print(" - Plotting daily chart")
+  if(generateCharts) {
   p <- ggplot(data, aes(x=day, y=risk)) +
     geom_bar(alpha=0.5, show.legend=F, stat= "identity") +
     theme(axis.text.x = element_text(angle=90)) +
@@ -1245,6 +1436,9 @@ chartRiskOverTime <- function(dataFrame, groupText) {
          title="Risk incurred per day")  + 
     theme(legend.position = "bottom")
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-risk-01-daily.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   print(" - Preparing hourly data")
   data <- dataFrame
@@ -1254,6 +1448,7 @@ chartRiskOverTime <- function(dataFrame, groupText) {
     dplyr::summarise(risk=sum(risk))
   
   print(" - Plotting hourly chart")
+  if(generateCharts) {
   p <- ggplot(data, aes(x=t, y=risk)) +
     geom_bar(alpha=0.5, show.legend=F, stat= "identity") +
     theme(axis.text.x = element_text(angle=90)) +
@@ -1264,6 +1459,9 @@ chartRiskOverTime <- function(dataFrame, groupText) {
     theme(legend.position = "bottom") +
     scale_x_datetime(labels = scales::date_format("%Y-%m-%d %H:%M"), breaks = scales::date_breaks('1 hours'))
   ggsave(paste(basedir,"/",phonedir,"-",groupText,"-risk-02-hourly.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+  } else {
+    print("   - Skipped");
+  }
   
   
 }
@@ -1289,7 +1487,7 @@ chartProximity(scoredOverTime,"06-simplerisk")
 #   4. WIP Apply risk formula across data
 #   4a. DONE Apply to those with txpower and calibration results first (easiest) - WORKING AND VALIDATED
 #   4b. DONE Apply standardised time window at 5 seconds with 30 seconds of history to remove skew
-#   4c. Find maximum y value in buckets and scale to 250, find min and scale to 50, now fit and check distributions are the same
+#   4c. DONE Find maximum y value in buckets and scale to 250, find min and scale to 50, now fit and check distributions are the same
 #   4d. Separate statistics and charting steps, and produce calibration summary format
 #   4e. Externalise R functions for re-use and refactor
 #   4x. All raw data with calibration algorithm applied (requires dynamic calculation and application of risk variables)

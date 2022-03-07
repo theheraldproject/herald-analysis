@@ -29,8 +29,8 @@ library(scales) # date format in charts
 #phonedir <- "Pixel3XL"
 #basedir <- "/home/adam/Documents/git/skunkworks/test-data"
 basedir <- "D:\\git\\skunkworks\\test-data\\2022-01-09-partner-data"
-phonedir <- "S10Lite"
-#phonedir <- "A40"
+#phonedir <- "S10Lite"
+phonedir <- "A40"
 #basedir <- "d:\\git\\skunkworks/test-data/2021-11-16-garage"
 #phonedir <- "A-S10lite"
 #basedir <- "./sample-output/2020-08-11-cx-47"
@@ -573,6 +573,12 @@ filterContactEvents <- function (dataFrame, statsData, configuration) {
   #cestatsrangerssi <- dplyr::filter(cestatsrangerssi, rangerssi > 5)
   #res <- dplyr::filter(res, macuuid %in% cestatsrangerssi$macuuid)
   #NROW(res)
+  # Filter for cerange > 10
+  cerangegte10 <- statsData
+  cerangegte10 <- dplyr::filter(cerangegte10, rangerssi >= 10)
+  res <- dplyr::filter(res, macuuid %in% cerangegte10$macuuid)
+  NROW(res)
+  
   
   res 
 }
@@ -873,6 +879,42 @@ chartAndFit <- function(dataFrame, groupText, fitData) {
       xlim(xlimmax,xlimmin) + ylim(0,0.025)
     #p
     ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-03-complete.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
+    
+    # Now reversed and fitted to gamma and normal(gaussian) distributions
+    p <- ggplot(dataFrame, aes(x=rssicor,color=1, fill=1)) +
+      geom_histogram(alpha=0.5, binwidth=3, show.legend = F, aes( y=..density.. )) +
+      geom_text(aes(x=fitData$meanValue[1] - 2*fitData$sdValue[1], label=paste(
+        "Gamma:-\nShape = ",myfit$estimate[1]," (SE = ",myfit$sd[1],")\nRate = ",myfit$estimate[2]," (SE = ",myfit$sd[2],")",
+        "\nNorm:-\nMean = ",myfitnorm$estimate[1]," (SE = ",myfitnorm$sd[1],")\nSD = ",myfitnorm$estimate[2]," (SE = ",myfitnorm$sd[2],")",
+        sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$maxValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$minValue[1]), color="black", linetype="solid", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] + fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] - fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] + 2*fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] - 2*fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] + 3*fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$meanValue[1] - 3*fitData$sdValue[1]), color="grey", linetype="dashed", size=0.5, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$farPeakValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$nearPeakValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+      geom_vline(data=dataFrame, aes(xintercept=fitData$centralPeakValue[1]), color="blue", linetype="dashed", size=1, show.legend = F) +
+      geom_text(aes(x=fitData$maxValue[1], label=paste("Max = ",fitData$maxValue[1],sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
+      geom_text(aes(x=fitData$minValue[1], label=paste("Min = ",fitData$minValue[1],sep=""), y=0.01), colour="black", angle=90, vjust = -1, text=element_text(size=11)) +
+      geom_text(aes(x=fitData$farPeakValue[1], label=paste("Lower peak = ",fitData$farPeakValue[1],sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+      geom_text(aes(x=fitData$nearPeakValue[1], label=paste("Upper peak = ",fitData$nearPeakValue[1],sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+      geom_text(aes(x=fitData$centralPeakValue[1], label=paste("Central peak = ",fitData$centralPeakValue[1],sep=""), y=0.01), colour="blue", angle=90, vjust = -1, text=element_text(size=11)) +
+      geom_text(aes(x=fitData$meanValue[1] + 2*fitData$sdValue[1], label=paste("N = ",fitData$countValues[1],"\nMean = ",fitData$meanValue[1],"\nSD = ",
+                                                                               fitData$sdValue[1],"\nSkewness = ",skewrssitxcor,"\nKurtosis = ",kurtosisrssitxcor,sep=""), y=0.02), colour="blue", vjust = -1, text=element_text(size=11)) +
+      labs(x="Calibrated proximity",
+           y="Relative Frequency",
+           title="Proximity Frequency fitting",
+           subtitle=paste("Across ",groupText," interactions",sep="")) + 
+      stat_function(fun = dgamma, args = list(shape = myfit$estimate[1], rate = myfit$estimate[2]), show.legend = F, colour="orange") +
+      stat_function(fun = dnorm, args = list(mean = myfitnorm$estimate[1], sd = myfitnorm$estimate[2]), show.legend = F) +
+      xlim(xlimmax,xlimmin) + ylim(0,0.025)
+    #p
+    ggsave(paste(basedir,"/",phonedir,"-",groupText,"-fitting-03-complete-3.png", sep=""), width = chartWidth, height = chartHeight, units = "mm")
     
     # Now with binwidth=1
     # Now reversed and fitted to gamma and normal(gaussian) distributions
@@ -1473,6 +1515,11 @@ scaleFactorData <- calculateScale(fitData,20,200)
 saveScaleFactorData(scaleFactorData,"05-scaled")
 scaledData <- applyScale(scaledData,scaleFactorData)
 printSummary(scaledData,"05-scaled")
+
+# FitData has not yet been scaled - need to recalculate before charting
+fitData <- calculateCentralAndUpperPeak(scaledData,"05-scaled")
+head(fitData)
+
 chartAndFit(scaledData,"05-scaled",fitData)
 
 #head(scaledData,n=200)

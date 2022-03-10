@@ -66,7 +66,7 @@ You only need run this script for a representative sample of phone pairs once to
 
 ## RSSI readings at distance
 
-Please see the [RSSI Reference Data README](reference-data/rssi.md)
+Please see the [RSSI Reference Data README](reference-data/rssi-raw-edison/README.md)
 for details.
 
 ## Assistance

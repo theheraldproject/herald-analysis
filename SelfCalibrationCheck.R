@@ -20,28 +20,37 @@ library(slider) # sliding time window
 library(scales) # date format in charts
 
 # Include herald risk library
-source("/home/adam/Documents/git/skunkworks/herald-analysis/heraldrisk.R")
+#source("/home/adam/Documents/git/skunkworks/herald-analysis/heraldrisk.R")
+source("D:/git/skunkworks/herald-analysis/heraldrisk.R")
 
 
 
 
-basedir <- "/home/adam/Documents/git/skunkworks/test-data"
-fitDataFile <- paste(basedir,"17.\ A40-12-16Dec2021-scored-refactored/A40-05-scaled-fitdata.csv",sep="/")
-scaleFactorDataFile <- paste(basedir,"17.\ A40-12-16Dec2021-scored-refactored/A40-05-scaled-scalefactordata.csv",sep="/")
-#fitDataFile <- paste(basedir,"16.\ S10Lite-12-16Dec2021-scored-refactored/S10Lite-05-scaled-fitdata.csv",sep="/")
-#scaleFactorDataFile <- paste(basedir,"16.\ S10Lite-12-16Dec2021-scored-refactored/S10Lite-05-scaled-scalefactordata.csv",sep="/")
-#phonedir <- "S10Lite"
-phonedir <- "A40"
-blid <- "Co2S+A" # For S10Lite, use with A40 data
-#blid <- "c5Y1zQ" # Fpr A40, use with S10Lite data
-bleDefaultTxPower <- 7 # TODO find this for our two test phones S10Lite (use with A40 data)
-#bleDefaultTxPower <- 7 # TODO find this for our two test phones A40 (usewith S10Lite data)
+#basedir <- "/home/adam/Documents/git/skunkworks/test-data"
+basedir <- "D:/git/skunkworks/test-data/2022-01-09-partner-data"
 
-# A40 result (may be wrong TxPower): Total mutual contact risk score: 5574.81757309342 (ex dropout: 5140.02621124087)
-# S10Lite result (may be wrong TxPower): Total mutual contact risk score: 5979.51870465455 (ex dropout: 4094.83606834584)
+# For A40 data processing
+#fitDataFile <- paste(basedir,"17.\ A40-12-16Dec2021-scored-refactored/A40-05-scaled-fitdata.csv",sep="/")
+#scaleFactorDataFile <- paste(basedir,"17.\ A40-12-16Dec2021-scored-refactored/A40-05-scaled-scalefactordata.csv",sep="/")
+#phonedir <- "A40"
+#blid <- "Co2S+A" # For S10Lite, use with A40 data
+#bleDefaultTxPower <- 20 # TODO find this for our two test phones S10Lite (use with A40 data)
+
+# For S10Lite data processing
+fitDataFile <- paste(basedir,"16.\ S10Lite-12-16Dec2021-scored-refactored/S10Lite-05-scaled-fitdata.csv",sep="/")
+scaleFactorDataFile <- paste(basedir,"16.\ S10Lite-12-16Dec2021-scored-refactored/S10Lite-05-scaled-scalefactordata.csv",sep="/")
+phonedir <- "S10Lite"
+blid <- "c5Y1zQ" # Fpr A40, use with S10Lite data
+bleDefaultTxPower <- 12 # TODO find this for our two test phones A40 (usewith S10Lite data)
+
+# A40 result (may be wrong TxPower of 7): Total mutual contact risk score: 5574.81757309342 (ex dropout: 5140.02621124087)
+# A40 result (may be wrong TxPower of 20): Total mutual contact risk score: 3384.68671450543 (ex dropout: 3229.97394798798) <-- use this (7.37% less than other side)
+# S10Lite result (may be wrong TxPower of 7): Total mutual contact risk score: 5979.51870465455 (ex dropout: 4207.34979939865)
+# S10Lite result (may be wrong TxPower of 12): Total mutual contact risk score: 4954.68930704596 (ex dropout: 3486.25233764308) <-- use this
 
 filtertimemin <- as.POSIXct(paste("2021-12-13", "08:00:00"), format="%Y-%m-%d %H:%M:%S")
-filtertimemax <- as.POSIXct(paste("2021-12-16", "09:30:00"), format="%Y-%m-%d %H:%M:%S")
+#filtertimemax <- as.POSIXct(paste("2021-12-16", "09:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2021-12-14", "11:00:00"), format="%Y-%m-%d %H:%M:%S") # Dropout at 14th 11:00 (approx) <-- use this
 
 settings <- generateDefaultHeraldLibrarySettings()
 head(settings)

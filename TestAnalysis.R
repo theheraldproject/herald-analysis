@@ -1,26 +1,10 @@
-# MIT License
+# Apache 2.0 licensed
 # 
-# Copyright (c) 2020 VMware Inc.
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#   
-#   The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# Copyright (c) 2020-2021 Herald Project Contributors
 
 # Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+
+# This file provides Fair Efficacy Formula multi-device test analytics.
 
 library(plyr)
 library(chron)
@@ -30,24 +14,25 @@ library(scales)
 library(caTools)
 
 # 1. Set the folder that contains a sub folder per phone in the test
-basedir <- "~/Documents/git/skunkworks/test-data/2020-08-31-home-office-rc-03-copy"
+basedir <- "/home/user/data/testrun"
 # 2. Set the app name and version (for the chart titles)
-appversion <- "rc-03"
+appversion <- "herald"
 
 # 3. (Optional) Time shift - If your protocol saves time in different time zones between mobile OS'
 timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
+# Gets applied to Android only
 # Set this wide by +/ 1 day until you figure out the right timeshift value
 
 # 4. Set the test outer time to be a couple of minutes before you started setting up the first phone in the environment, until after the last phone was deactivated
-filtertimemin <- as.POSIXct(paste("2020-08-31", "12:50:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemin <- as.POSIXct(paste("2021-06-20", "13:30:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemin
-filtertimemax <- as.POSIXct(paste("2020-08-31", "21:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2021-06-21", "06:30:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemax
 
 # 5. For FORMAL statistical calculations, set the start time to be the time at which the LAST phone was introduced to the group (or removed from shielded sleeve)
 #    Set the end time to be the time at which the FIRST phone was moved/had the app or BLE deactivated after the test
-cestart <- as.POSIXct(paste("2020-08-31", "12:55:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2020-08-31", "21:15:00"), format="%Y-%m-%d %H:%M:%S")
+cestart <- as.POSIXct(paste("2021-06-20", "15:40:00"), format="%Y-%m-%d %H:%M:%S")
+ceend <-   as.POSIXct(paste("2021-06-21", "04:10:00"), format="%Y-%m-%d %H:%M:%S")
 
 # 6. Select all lines in this file, and click Run. After several minutes (for 8 hour tests) you will see charts and summary CSV appear in the above folder
 
@@ -91,10 +76,11 @@ linecsv
 # Determine longevity window time filters
 hour <- 1 * 60 * 60 # seconds for an hour
 cehour <- 2 * 60 # 2 per minute, 60 minutes in an hour
-longfirststart <- filtertimemin
-longfirstend <- filtertimemin + hour
-longsecondstart <- filtertimemax - hour
-longsecondend <- filtertimemax
+# Note: Changed 2021-06-21 to be based off of CE start/end time, NOT chart display start/end time
+longfirststart <- cestart
+longfirstend <- cestart + hour
+longsecondstart <- ceend - hour
+longsecondend <- ceend
 
 
 allmu <- data.frame(matrix(ncol = 3, nrow=0))
@@ -139,8 +125,8 @@ names(allbids) <- c("initialBID")
 alldurations <- data.frame(matrix(ncol = 9, nrow = 0))
 names(alldurations) <- c("shortname","rssis.total","observer")
 
-#allrawdurations <- data.frame(matrix(ncol = 5, nrow = 0))
-#names(allrawdurations) <- c("t","shortname","initialBID","observer","count")
+allrawdurations <- data.frame(matrix(ncol = 5, nrow = 0))
+names(allrawdurations) <- c("t","shortname","initialBID","observer","count")
 allintervals <- data.frame(matrix(ncol = 2, nrow = 0))
 names(allintervals) <- c("shortname","t")
 
@@ -153,6 +139,11 @@ for (i in 1:phonescount ) {
   thisphone <- phones[i,]
   thisphone
   thisshortname <- thisphone$shortname
+  
+  # Find this OS is Android
+  thisos <- thisphone$OSType
+  thisisandroid <- "Android" == thisos
+  thisos
   
   # pre-cx-47: thisdir <- paste(basedir,thisphone$PhoneId,sep="/") # PhoneId and NOT i!
   thisdir <- thisphone$FolderName
@@ -213,6 +204,16 @@ for (i in 1:phonescount ) {
   detections <- join(detections,mactobid,by="macuuid")
   detections$t <- as.POSIXct(detections$time, format="%Y-%m-%d %H:%M:%S")
   
+  # Timeshift if Android (Daylight savings)
+  if (thisisandroid) {
+    detections$t <- detections$t + timeshift
+  }
+  
+  ## Check if any detection occurred
+  if (dim(detections)[1] == 0) {
+    print(" - Nothing detected")
+    next
+  }
   detections$finalname = paste(detections$shortname, " - A. Discoveries",sep="")
   detections <- subset(detections, select = c("t","finalname"))
   detections$rt <- "A. Detections"
@@ -228,6 +229,11 @@ for (i in 1:phonescount ) {
   head(readid)
   readid <- join(readid,mactobid,by="macuuid")
   readid$t <- as.POSIXct(readid$time, format="%Y-%m-%d %H:%M:%S")
+  
+  # Timeshift if Android (Daylight savings)
+  if (thisisandroid) {
+    readid$t <- readid$t + timeshift
+  }
   
   
   
@@ -254,6 +260,11 @@ for (i in 1:phonescount ) {
   head(rssi)
   rssi <- join(rssi,mactobid,by="macuuid")
   rssi$t <- as.POSIXct(rssi$time, format="%Y-%m-%d %H:%M:%S")
+  
+  # Timeshift if Android (Daylight savings)
+  if (thisisandroid) {
+    rssi$t <- rssi$t + timeshift
+  }
   head(rssi)
   
   ## Process for ID written to us
@@ -268,6 +279,11 @@ for (i in 1:phonescount ) {
   head(mactobid)
   written <- join(written,mactobid,by="initialBID")
   written$t <- as.POSIXct(written$time, format="%Y-%m-%d %H:%M:%S")
+  
+  # Timeshift if Android (Daylight savings)
+  if (thisisandroid) {
+    written$t <- written$t + timeshift
+  }
   head(written)
   
   
@@ -364,6 +380,8 @@ for (i in 1:phonescount ) {
   # Plot
   p <- ggplot(all, aes(x=t, y=finalname, colour=rt)) +
     geom_point() + 
+    geom_vline(data=all, aes(xintercept=cestart), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=all, aes(xintercept=ceend), color="black", linetype="solid", size=0.5, show.legend = F) +
     ggtitle(paste("Phones seen by  ",thisshortname," over time",sep="") ) + 
     theme(legend.position = "bottom", legend.box = "vertical") +
     labs(color = "Operation") +

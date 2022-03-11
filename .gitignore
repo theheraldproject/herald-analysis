@@ -39,3 +39,12 @@ vignettes/*.pdf
 .Renviron
 
 .DS_Store
+
+# Eclipse project bin folder
+reference-data/rssi-raw-edison/java/segmentation/bin
+
+# Signed-off by template
+git-template
+
+**/output/**
+reference-data/rssi-raw-edison/rssi-analyses-output-charts.zip

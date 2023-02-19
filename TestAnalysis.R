@@ -1,8 +1,8 @@
 # Apache 2.0 licensed
 # 
-# Copyright (c) 2020-2021 Herald Project Contributors
+# Copyright (c) 2020-2023 Herald Project Contributors
 
-# Author Adam Fowler adamf@vmware.com adam@adamfowler.org
+# Author Adam Fowler adam@adamfowler.org
 
 # This file provides Fair Efficacy Formula multi-device test analytics.
 
@@ -14,9 +14,9 @@ library(scales)
 library(caTools)
 
 # 1. Set the folder that contains a sub folder per phone in the test
-basedir <- "/home/user/data/testrun"
+basedir <- "/Volumes/TB3-1/git/skunkworks/new-data/2023-02-05-220-full"
 # 2. Set the app name and version (for the chart titles)
-appversion <- "herald"
+appversion <- "herald-v220"
 
 # 3. (Optional) Time shift - If your protocol saves time in different time zones between mobile OS'
 timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to log file times to match RSSI (normally exact hours)
@@ -24,19 +24,26 @@ timeshift <- 0 * 60 * 60 # Actually in seconds for posix time. Time to ADD to lo
 # Set this wide by +/ 1 day until you figure out the right timeshift value
 
 # 4. Set the test outer time to be a couple of minutes before you started setting up the first phone in the environment, until after the last phone was deactivated
-filtertimemin <- as.POSIXct(paste("2021-06-20", "13:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemin <- as.POSIXct(paste("2023-02-05", "18:00:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemin
-filtertimemax <- as.POSIXct(paste("2021-06-21", "06:30:00"), format="%Y-%m-%d %H:%M:%S")
+filtertimemax <- as.POSIXct(paste("2023-02-06", "08:30:00"), format="%Y-%m-%d %H:%M:%S")
 filtertimemax
 
 # 5. For FORMAL statistical calculations, set the start time to be the time at which the LAST phone was introduced to the group (or removed from shielded sleeve)
 #    Set the end time to be the time at which the FIRST phone was moved/had the app or BLE deactivated after the test
-cestart <- as.POSIXct(paste("2021-06-20", "15:40:00"), format="%Y-%m-%d %H:%M:%S")
-ceend <-   as.POSIXct(paste("2021-06-21", "04:10:00"), format="%Y-%m-%d %H:%M:%S")
+cestart <- as.POSIXct(paste("2023-02-05", "19:40:00"), format="%Y-%m-%d %H:%M:%S")
+ceend <-   as.POSIXct(paste("2023-02-06", "07:40:00"), format="%Y-%m-%d %H:%M:%S")
+
+focusstart <- as.POSIXct(paste("2023-02-05", "21:00:00"), format="%Y-%m-%d %H:%M:%S")
+focusend <-   as.POSIXct(paste("2023-02-05", "22:00:00"), format="%Y-%m-%d %H:%M:%S")
 
 # 6. Select all lines in this file, and click Run. After several minutes (for 8 hour tests) you will see charts and summary CSV appear in the above folder
 
 # DO NOT EDIT BELOW THIS LINE
+
+if (!dir.exists(basedir)) {
+  stop("Specified data directory does not exist! Halting.")
+}
 
 # time interval calcs
 ceinterval <- "30 seconds" # for POSIXct cut
@@ -122,6 +129,9 @@ phonescount
 allbids <- data.frame(matrix(ncol = 1, nrow=0))
 names(allbids) <- c("initialBID")
 
+allobservations <- data.frame(matrix(ncol = 5, nrow = 0))
+names(allobservations) <- c("t","finalname","shortname","rt","observer")
+
 alldurations <- data.frame(matrix(ncol = 9, nrow = 0))
 names(alldurations) <- c("shortname","rssis.total","observer")
 
@@ -155,7 +165,7 @@ for (i in 1:phonescount ) {
   csvdatafull <- FALSE
   csvdata <- tryCatch({
     tp <- read.table(paste(thisdir , "/contacts.csv",sep=""), sep=",",header = TRUE)
-    # names: time,sensor,id,detect,read,measure,share,visit,data
+    # names: time,sensor,id,detect,read,measure,share,visit,detectHerald,delete,data
    
     cvsdatafull <- TRUE
     tp
@@ -215,7 +225,7 @@ for (i in 1:phonescount ) {
     next
   }
   detections$finalname = paste(detections$shortname, " - A. Discoveries",sep="")
-  detections <- subset(detections, select = c("t","finalname"))
+  detections <- subset(detections, select = c("t","finalname","shortname"))
   detections$rt <- "A. Detections"
   head(detections)
   
@@ -239,7 +249,7 @@ for (i in 1:phonescount ) {
   
   if (dim(readid)[1] > 0) {
     readid$finalname = paste(readid$shortname, " - E1. Broadcast ID Read",sep="")
-    readid <- subset(readid, select = c("t","finalname"))
+    readid <- subset(readid, select = c("t","finalname","shortname"))
     readid$rt <- "E1. Broadcast ID Read"
     head(readid)
   }
@@ -249,7 +259,14 @@ for (i in 1:phonescount ) {
   rssi <- dplyr::filter(csvdata,measure==3)
   head(rssi)
   rssi <- dplyr::select(rssi,c("time","id","data"))
-  rssi$rssi <- as.numeric(substr(rssi$data,7,9))
+  if (0 == nrow(rssi)) {
+    rssi[1,] <- NA
+    rssi$rssi <- NA
+    rssi$t <- NA
+    rssi <- rssi[0,]
+  } else {
+    rssi$rssi <- as.numeric(substr(rssi$data,7,9))
+  }
   names(rssi) <- c("time","macuuid","data","rssi")
   rssivalues <- dplyr::select(rssi,c("time","macuuid","rssi"))
   rssivalues <- join(rssivalues,mactobid,by="macuuid")
@@ -264,6 +281,7 @@ for (i in 1:phonescount ) {
   # Timeshift if Android (Daylight savings)
   if (thisisandroid) {
     rssi$t <- rssi$t + timeshift
+    rssivalues$t <- rssivalues$t + timeshift
   }
   head(rssi)
   
@@ -310,16 +328,29 @@ for (i in 1:phonescount ) {
     predur <- rbind(rssi,written)
   }
   durations <- subset(predur,select=c("t","shortname","initialBID"))
-  durations$observer <- thisshortname
+  if (0 == nrow(durations)) {
+    durations[1,] <- NA
+    durations$observer <- thisshortname
+    durations$count <- 1
+    durations <- durations[0,]
+  } else {
+    durations$observer <- thisshortname
+    durations$count <- 1
+  }
   head(durations)
   
   # Summarise by mean, modal, median duration, count of contact events, per shortname seen
-  durations$count <- 1
   du <- ddply(durations, "shortname", summarise, 
               rssis.total=sum(count)
   )
   du
-  du$observer <- thisshortname
+  if (0 == nrow(du)) {
+    du[1,] <- NA
+    du$observer <- thisshortname
+    du <- du[0,]
+  } else {
+    du$observer <- thisshortname
+  }
   
   print(" - binding allrawdurations")
   head(durations)
@@ -331,7 +362,7 @@ for (i in 1:phonescount ) {
   print(" - processing RSSI")
   if (dim(rssi)[1] > 0) {
     rssi$finalname = paste(rssi$shortname, " - C1. RSSIs",sep="")
-    rssi <- subset(rssi, select = c("t","finalname"))
+    rssi <- subset(rssi, select = c("t","finalname","shortname"))
     rssi$rt <- "C1. RSSIs"
     head(rssi)
   }
@@ -339,7 +370,7 @@ for (i in 1:phonescount ) {
   print(" - processing written")
   if (dim(written)[1] > 0) {
     written$finalname = paste(written$shortname, " - C2. Write ID with RSSI",sep="")
-    written <- subset(written, select = c("t","finalname"))
+    written <- subset(written, select = c("t","finalname","shortname"))
     written$rt <- "C2. Write ID with RSSI"
     head(written)
   }
@@ -369,7 +400,8 @@ for (i in 1:phonescount ) {
   
   all <- rbind(all,detections,readid,rssi,written)
   
-  all$t <- all$t + timeshift # seconds
+  # Already time shifted in the above original variables
+  #all$t <- all$t + timeshift # seconds
   
   head(all)
   
@@ -380,16 +412,20 @@ for (i in 1:phonescount ) {
   # Plot
   p <- ggplot(all, aes(x=t, y=finalname, colour=rt)) +
     geom_point() + 
-    geom_vline(data=all, aes(xintercept=cestart), color="black", linetype="solid", size=0.5, show.legend = F) +
-    geom_vline(data=all, aes(xintercept=ceend), color="black", linetype="solid", size=0.5, show.legend = F) +
+    geom_vline(data=all, aes(xintercept=cestart), color="black", linetype="solid", linewidth=0.5, show.legend = F) +
+    geom_vline(data=all, aes(xintercept=ceend), color="black", linetype="solid", linewidth=0.5, show.legend = F) +
     ggtitle(paste("Phones seen by  ",thisshortname," over time",sep="") ) + 
     theme(legend.position = "bottom", legend.box = "vertical") +
     labs(color = "Operation") +
     xlab("Time") + ylab("Phone & Operation") +
-    scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
-    #scale_x_datetime(date_breaks = "10 min", date_minor_breaks = "2 min")
+    scale_x_datetime(date_breaks = "180 min", date_minor_breaks = "10 min")
+    #scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
+    #scale_x_datetime(date_breaks = "10 min", date_minor_breaks = "1 min")
   p
   ggsave(paste(thisdir, "-report.png",sep=""), width = 600, height = 300, units = "mm")
+  
+  all$observer <- thisshortname
+  allobservations <- rbind(allobservations,all)
   
   ## now plot RSSI values over time
   rssivalues <- dplyr::filter(rssivalues,t>=cestart)
@@ -401,7 +437,8 @@ for (i in 1:phonescount ) {
     theme(legend.position = "bottom", legend.box = "vertical") +
     labs(color = "Operation") +
     xlab("Time") + ylab("Phone & Operation") +
-    scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
+    scale_x_datetime(date_breaks = "180 min", date_minor_breaks = "10 min")
+    #scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
     #scale_x_datetime(date_breaks = "1 min", date_minor_breaks = "10 secs")
   p
   ggsave(paste(thisdir, "-accuracy.png",sep=""), width = 600, height = 300, units = "mm")
@@ -410,31 +447,36 @@ for (i in 1:phonescount ) {
   ## Perform per-phone formal continuity calculations
   
   # create this phone's contact event continuity summary per phone seen and save for final totals
-  print(" - Creating formal evaulation for this phone")
-  intervals <- dplyr::filter(preintervals,t>=cestart)
-  intervals <- dplyr::filter(intervals,t<=ceend)
-  intervals <- dplyr::filter(intervals,shortname != "Unknown without name")
-  intervals <- dplyr::filter(intervals,shortname != thisshortname)
-  thisshortname
-  head(intervals)
-  allintervals <- rbind(allintervals,intervals)
-  if (dim(intervals)[1] > 0) {
-    intervals$tc <- cut(intervals$t, breaks = "30 secs")
-    head(intervals)
-    # Now summarise by count
-    intervals <- dplyr::count(intervals,shortname,tc)
-    #head(intervals)
-    # Now group by finalname (phones seen) by sum of those whose count > 0
-    intervals$nboolean <- 1
-    mu <- ddply(intervals, "shortname", summarise,  windows=sum(nboolean))
-    mu$seenby <- thisshortname
+  print(" - Creating formal evaluation for this phone")
+  if (0 == nrow(preintervals)) {
+    print(" - No interval data for this phone - will not be added to formal evaluation")
   } else {
-    mu <- data.frame(matrix(ncol = 3, nrow = 0))
-    names(all) <- c("shortname","windows","seenby")
+    intervals <- dplyr::filter(preintervals,t>=cestart)
+    intervals <- dplyr::filter(intervals,t<=ceend)
+    intervals <- dplyr::filter(intervals,shortname != "Unknown without name")
+    intervals <- dplyr::filter(intervals,shortname != thisshortname)
+    thisshortname
+    head(intervals)
+    allintervals <- rbind(allintervals,intervals)
+    if (dim(intervals)[1] > 0) {
+      intervals$tc <- cut(intervals$t, breaks = "30 secs")
+      head(intervals)
+      # Now summarise by count
+      intervals <- dplyr::count(intervals,shortname,tc)
+      #head(intervals)
+      # Now group by finalname (phones seen) by sum of those whose count > 0
+      intervals$nboolean <- 1
+      mu <- ddply(intervals, "shortname", summarise,  windows=sum(nboolean))
+      mu$seenby <- thisshortname
+    } else {
+      mu <- data.frame(matrix(ncol = 3, nrow = 0))
+      names(all) <- c("shortname","windows","seenby")
+    }
+    mu
+    allmu
+    allmu <- rbind(allmu,mu)
   }
-  mu
-  allmu
-  allmu <- rbind(allmu,mu)
+  print(" - Completed processing for this phone")
 }
 
 print("Creating formal test summary")
@@ -465,6 +507,8 @@ write.csv(allbids,paste(basedir , "/info-broadcast-ids-seen.csv",sep=""))
 ## Create pairwise summary
 
 if (nrow(alldurations) > 0) {
+  print(nrow(alldurations))
+  #alldurations
   # Pairings now
   pairings <- subset(alldurations,select=c("shortname","observer"))
   pairings <- dplyr::distinct(pairings)
@@ -564,3 +608,35 @@ formaltotals$longevity <- abs(errwindowsstart - errwindowsend)
 
 # write out formal results
 write.csv(formaltotals,paste(basedir , "/formal-summary.csv",sep=""))
+
+head(allobservations)
+#write.csv(allobservations,paste(basedir , "/allobservations.csv",sep=""))
+
+# Process allobservations to create charts for each OBSERVED phone
+justshortnames <- dplyr::select(allobservations,c("shortname"))
+allshortnames <- dplyr::distinct(justshortnames)
+
+focusobservations <- dplyr::filter(allobservations,t>=focusstart)
+focusobservations <- dplyr::filter(focusobservations,t<=focusend)
+head(focusobservations)
+for (sn in 1:nrow(allshortnames)) {
+  tsn <- allshortnames[sn,]
+  observations <- dplyr::filter(focusobservations,shortname==tsn)
+  observations$rowname <- paste(observations$observer,observations$rt,sep="-")
+  
+  p <- ggplot(observations, aes(x=t, y=rowname, color=rt)) +
+    geom_point() + 
+    geom_vline(data=observations, aes(xintercept=cestart), color="black", linetype="solid", linewidth=0.5, show.legend = F) +
+    geom_vline(data=observations, aes(xintercept=ceend), color="black", linetype="solid", linewidth=0.5, show.legend = F) +
+    ggtitle(paste("Observations of  ",tsn," over time",sep="") ) + 
+    theme(legend.position = "bottom", legend.box = "vertical") +
+    labs(color = "Operation") +
+    xlab("Time") + ylab("Observer Phone & Operation") +
+  #  scale_x_datetime(date_breaks = "180 min", date_minor_breaks = "10 min")
+  #scale_x_datetime(date_breaks = "60 min", date_minor_breaks = "10 min")
+  scale_x_datetime(date_breaks = "10 min", date_minor_breaks = "1 min")
+  #p
+  ggsave(paste(basedir,"/",sn, "-observations.png",sep=""), width = 600, height = 300, units = "mm")
+  
+}
+

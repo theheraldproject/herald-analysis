@@ -48,3 +48,8 @@ git-template
 
 **/output/**
 reference-data/rssi-raw-edison/rssi-analyses-output-charts.zip
+
+/anomaly-detection/.gradle
+/anomaly-detection/build
+/anomaly-detection/lib/build
+/anomaly-detection/lib/bin

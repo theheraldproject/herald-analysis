@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch AnomalyDetector",
+            "request": "launch",
+            "mainClass": "io.heraldprox.analysis.anomalies.AnomalyDetector",
+            "projectName": "lib",
+            "args": "./lib/data/2022-12-03-01 '2022-11-29 22:30:00' '2022-11-29 23:59:00'"
+        },
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        }
+    ]
+}
